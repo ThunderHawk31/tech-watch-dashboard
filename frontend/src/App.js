@@ -25,6 +25,7 @@ import { InstallPWA } from './components/InstallPWA';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { FavoritesProvider, useFavorites as useFavoritesContext } from './contexts/FavoritesContext';
 import { HeaderNew } from './components/HeaderNew';
+import MentionsLegales from './MentionsLegales';
 // Sector colors and icons
 const sectorConfig = {
   "IA": { color: "#8B5CF6", bg: "bg-violet-500/20", text: "text-violet-400", icon: Zap },
@@ -69,7 +70,6 @@ const Header = HeaderNew;
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const lastUpdate = "23 décembre 2025"; // ← Change cette date quand tu mets à jour
 
   return (
     <footer className="border-t border-border mt-16 py-8 bg-card/30">
@@ -114,6 +114,11 @@ const Footer = () => {
                   À propos
                 </Link>
               </li>
+              <li>
+                <Link to="/mentions-legales" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Mentions légales
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -123,9 +128,9 @@ const Footer = () => {
             <div className="space-y-3">
               {/* Liens sociaux */}
               <div className="flex items-center gap-3">
-                <a 
-                  href="https://github.com/ThunderHawk31" 
-                  target="_blank" 
+                <a
+                  href="https://github.com/ThunderHawk31"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Profil GitHub"
@@ -133,9 +138,9 @@ const Footer = () => {
                   <Github className="w-4 h-4" />
                   <span>GitHub</span>
                 </a>
-                <a 
-                  href="https://linkedin.com/in/nolan-macé-b8647738a" 
-                  target="_blank" 
+                <a
+                  href="https://linkedin.com/in/nolan-macé-b8647738a"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Profil LinkedIn"
@@ -145,8 +150,8 @@ const Footer = () => {
                 </a>
               </div>
 
-              {/* Email (optionnel) */}
-              <a 
+              {/* Email */}
+              <a
                 href="mailto:nolan.mace49@gmail.com"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -176,15 +181,8 @@ const Footer = () => {
               <p className="hidden md:inline">Créé par Nolan</p>
             </div>
 
-            {/* Infos techniques */}
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>En ligne</span>
-              </div>
-              <span>•</span>
-              <span>Dernière mise à jour : {lastUpdate}</span>
-            </div>
+            {/* ✅ SUPPRIMÉ : "En ligne" et "Dernière mise à jour" */}
+            {/* Les infos techniques ont été retirées comme demandé */}
           </div>
         </div>
 
@@ -192,7 +190,6 @@ const Footer = () => {
         <div className="mt-4 text-center">
           <p className="text-xs text-muted-foreground">
             Propulsé par n8n • Claude API • Google Sheets • Railway • Vercel
-          
           </p>
         </div>
       </div>
@@ -1112,6 +1109,7 @@ function App() {
           />
           <Route path="/favoris" element={<FavoritesPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
         </Routes>
       </main>
       <Footer />
