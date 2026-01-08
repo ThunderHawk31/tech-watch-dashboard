@@ -1,0 +1,18 @@
+# Robots.txt pour Tech Watch Dashboard
+# Autorise l'indexation complète du site
+
+User-agent: *
+Allow: /
+
+# Sitemap (optionnel, à créer plus tard)
+Sitemap: https://ton-site.vercel.app/sitemap.xml
+
+# Règles spécifiques pour les bots courants
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Délai entre les requêtes (en secondes)
+Crawl-delay: 1

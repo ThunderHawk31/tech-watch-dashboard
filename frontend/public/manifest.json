@@ -1,0 +1,41 @@
+{
+  "short_name": "Tech Watch",
+  "name": "Tech Watch Dashboard - Veille IA & Tech",
+  "description": "Analyses automatiques d'articles tech par IA",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-desktop.png",
+      "type": "image/png",
+      "sizes": "2499x1275",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshot-mobile.jpeg",
+      "type": "image/jpeg",
+      "sizes": "1080x2310",
+      "form_factor": "narrow"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#8B5CF6",
+  "background_color": "#0F172A",
+  "orientation": "portrait-primary",
+  "categories": ["news", "business", "finance"],
+  "lang": "fr-FR",
+  "prefer_related_applications": false
+}

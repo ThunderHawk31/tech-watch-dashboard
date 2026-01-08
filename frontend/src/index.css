@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 235 25% 13%;
+  --foreground: 0 0% 92%;
+  --card: 225 35% 15%;
+  --card-foreground: 0 0% 92%;
+  --popover: 225 35% 15%;
+  --popover-foreground: 0 0% 92%;
+  --primary: 215 60% 25%;
+  --primary-foreground: 0 0% 92%;
+  --secondary: 350 75% 55%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 225 20% 25%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 215 60% 30%;
+  --accent-foreground: 0 0% 92%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 225 20% 25%;
+  --input: 225 20% 25%;
+  --ring: 215 60% 45%;
+  --radius: 0.75rem;
+}
+
+.light {
+  --background: 0 0% 98%;
+  --foreground: 225 25% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 225 25% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 225 25% 15%;
+  --primary: 215 60% 35%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 350 75% 55%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 220 15% 92%;
+  --muted-foreground: 225 15% 45%;
+  --accent: 215 60% 95%;
+  --accent-foreground: 215 60% 35%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 88%;
+  --input: 220 15% 88%;
+  --ring: 215 60% 45%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(233, 69, 96, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(233, 69, 96, 0.5); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Card glow effect */
+.card-glow {
+  position: relative;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(15, 52, 96, 0.5), transparent, rgba(233, 69, 96, 0.3));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Star rating colors */
+.star-filled {
+  color: #F59E0B;
+}
+
+.star-empty {
+  color: hsl(var(--muted));
+}
+
+/* Markdown content styling */
+.markdown-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+  line-height: 1.7;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive container */
+.container-app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-app {
+    padding: 0 2rem;
+  }
+}
