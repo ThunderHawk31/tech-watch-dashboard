@@ -39,9 +39,8 @@ const MentionsLegales = () => {
           <CardContent className="space-y-2 text-sm">
             <p><strong>Nom :</strong> Nolan Macé</p>
             <p><strong>Statut :</strong> Étudiant en BTS SIO SISR (Services Informatiques aux Organisations)</p>
-            <p><strong>Spécialisation :</strong> Solutions d'Infrastructure, Systèmes et Réseaux - Cybersécurité</p>
             <p><strong>Email :</strong> <a href="mailto:nolan.mace49@gmail.com" className="text-primary hover:underline">nolan.mace49@gmail.com</a></p>
-            <p><strong>Site web :</strong> <a href="https://tech-watch-nolan.vercel.app" className="text-primary hover:underline">tech-watch-nolan.vercel.app</a></p>
+            <p><strong>Site web :</strong> <a href="https://techwatch.fr" className="text-primary hover:underline">techwatch.fr</a></p>
           </CardContent>
         </Card>
 
@@ -128,9 +127,11 @@ const MentionsLegales = () => {
               Les données étant stockées localement, vous pouvez les supprimer directement depuis les paramètres de votre navigateur.
             </p>
 
-            <p className="font-semibold mt-3">Analytics</p>
+            <p className="font-semibold mt-3">Analytics et statistiques</p>
             <p>
-              Ce site n'utilise aucun outil d'analytics tiers (Google Analytics, etc.).
+              Ce site utilise des outils d'analytics pour mesurer l'audience et améliorer l'expérience utilisateur.
+              Les données collectées sont anonymisées et utilisées uniquement à des fins statistiques.
+              Aucune donnée personnelle identifiable n'est partagée avec des tiers.
             </p>
           </CardContent>
         </Card>
@@ -220,7 +221,7 @@ const MentionsLegales = () => {
       {/* Footer de page */}
       <div className="mt-12 pt-6 border-t border-border text-center text-sm text-muted-foreground">
         <p>
-          Ce site est un projet éducatif réalisé dans le cadre du BTS SIO SISR.
+          Projet de veille technologique automatisée développé par Nolan Macé.
         </p>
         <p className="mt-2">
           <Link to="/" className="text-primary hover:underline">
