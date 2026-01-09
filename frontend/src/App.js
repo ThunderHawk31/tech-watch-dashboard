@@ -26,6 +26,27 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { FavoritesProvider, useFavorites as useFavoritesContext } from './contexts/FavoritesContext';
 import { HeaderNew } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
+import DOMPurify from 'dompurify';
+
+// ============================================================
+// SÉCURITÉ : Sanitization HTML (Protection XSS)
+// ============================================================
+const sanitizeHTML = (html) => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'br', 'strong', 'em', 'b', 'i', 'u',
+      'ul', 'ol', 'li',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'a', 'blockquote', 'code', 'pre'
+    ],
+    ALLOWED_ATTR: {
+      'a': ['href', 'target', 'rel'],
+      'code': ['class']
+    },
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+  });
+};
+
 // Sector colors and icons
 const sectorConfig = {
   "IA": { color: "#8B5CF6", bg: "bg-violet-500/20", text: "text-violet-400", icon: Zap },
@@ -356,9 +377,10 @@ const ArticleModal = ({ article, open, onClose }) => {
         </DialogHeader>
         
         <ScrollArea className="max-h-[50vh] pr-4">
-          <div className="text-sm whitespace-pre-wrap">
-            {article.analyse}
-          </div>
+          <div
+            className="text-sm whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: sanitizeHTML(article.analyse || '') }}
+          />
         </ScrollArea>
 
         {article.actions && article.actions.length > 0 && (
