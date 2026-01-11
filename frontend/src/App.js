@@ -1,4 +1,5 @@
 import { fetchArticles as fetchArticlesAPI } from './api';
+import { validateFilters } from './validation/filters';
 import { useState, useEffect, lazy, Suspense, memo } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
@@ -417,15 +418,29 @@ const ArticleModal = ({ article, open, onClose }) => {
 
 const FiltersBar = ({ filters, setFilters }) => {
   const [searchInput, setSearchInput] = useState(filters.search || "");
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters(prev => ({ ...prev, search: searchInput }));
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [searchInput]);
-  
+
+  // ✅ Validation simple avec console.warn
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value };
+
+    // Valide immédiatement (feedback développeur)
+    const { isValid, errors } = validateFilters(newFilters);
+
+    if (!isValid) {
+      console.warn('⚠️ Filtres invalides:', errors);
+    }
+
+    setFilters(newFilters);
+  };
+
   return (
     <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-4 mb-8 border border-border">
       <div className="flex flex-col lg:flex-row gap-4">
@@ -443,7 +458,7 @@ const FiltersBar = ({ filters, setFilters }) => {
         <div className="flex flex-wrap gap-3">
           <Select
             value={filters.sector}
-            onValueChange={(value) => setFilters(prev => ({ ...prev, sector: value }))}
+            onValueChange={(value) => handleFilterChange('sector', value)}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Secteur" />
@@ -454,12 +469,15 @@ const FiltersBar = ({ filters, setFilters }) => {
               <SelectItem value="Tech">Tech</SelectItem>
               <SelectItem value="Finance">Finance</SelectItem>
               <SelectItem value="Crypto">Crypto</SelectItem>
+              <SelectItem value="Énergie">Énergie</SelectItem>
+              <SelectItem value="Santé">Santé</SelectItem>
+              <SelectItem value="Autre">Autre</SelectItem>
             </SelectContent>
           </Select>
 
           <Select
             value={filters.sentiment}
-            onValueChange={(value) => setFilters(prev => ({ ...prev, sentiment: value }))}
+            onValueChange={(value) => handleFilterChange('sentiment', value)}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Sentiment" />
@@ -474,7 +492,7 @@ const FiltersBar = ({ filters, setFilters }) => {
 
           <Select
             value={filters.minImportance}
-            onValueChange={(value) => setFilters(prev => ({ ...prev, minImportance: value }))}
+            onValueChange={(value) => handleFilterChange('minImportance', value)}
           >
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Importance" />
@@ -489,7 +507,7 @@ const FiltersBar = ({ filters, setFilters }) => {
 
           <Select
             value={filters.sort}
-            onValueChange={(value) => setFilters(prev => ({ ...prev, sort: value }))}
+            onValueChange={(value) => handleFilterChange('sort', value)}
           >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Trier par" />

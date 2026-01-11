@@ -1,3 +1,5 @@
+import { validateFilters, sanitizeSearch } from './validation/filters';
+
 const N8N_API_URL = 'https://primary-production-fa932.up.railway.app/webhook/api/articles';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -40,29 +42,51 @@ function setCache(data) {
 }
 
 export async function fetchArticles(filters = {}, page = 1) {
+  // ✅ VALIDATION AVANT TOUTE REQUÊTE
+  const validationResult = validateFilters({ ...filters, page });
+
+  if (!validationResult.isValid) {
+    console.error('❌ Validation errors:', validationResult.errors);
+
+    // Affiche les erreurs de façon lisible
+    const errorMessages = validationResult.errors
+      .map(e => `${e.field}: ${e.message}`)
+      .join(', ');
+
+    throw new Error(`Filtres invalides: ${errorMessages}`);
+  }
+
+  // ✅ Utilise les valeurs VALIDÉES (pas les filtres bruts)
+  const validFilters = validationResult.value;
+
+  // ✅ Sanitize la recherche (couche supplémentaire)
+  if (validFilters.search) {
+    validFilters.search = sanitizeSearch(validFilters.search);
+  }
+
   try {
     // Essaye d'utiliser le cache
     const cachedData = getCache();
-    
+
     if (cachedData) {
-      return filterAndPaginate(cachedData, filters, page);
+      return filterAndPaginate(cachedData, validFilters, validFilters.page);
     }
-    
+
     // Sinon fetch
     console.log('🔄 Récupération des données depuis n8n...');
     const response = await fetch(N8N_API_URL);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     // Stocke en cache
     setCache(data);
-    
-    return filterAndPaginate(data, filters, page);
-    
+
+    return filterAndPaginate(data, validFilters, validFilters.page);
+
   } catch (error) {
     console.error('❌ Erreur API:', error);
     throw error;
