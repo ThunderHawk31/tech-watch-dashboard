@@ -1,6 +1,7 @@
 import { validateFilters, sanitizeSearch } from './validation/filters';
 
-const N8N_API_URL = 'https://primary-production-fa932.up.railway.app/webhook/api/articles';
+// ✅ URL récupérée depuis les variables d'environnement
+const N8N_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5678/webhook/api/articles';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CACHE_KEY = 'tech_watch_cache';
