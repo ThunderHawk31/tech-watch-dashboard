@@ -1,6 +1,7 @@
 import { fetchArticles as fetchArticlesAPI } from './api';
 import { validateFilters } from './validation/filters';
 import { useState, useEffect, lazy, Suspense, memo } from "react";
+import { useValidatedUrlParams } from './hooks/useValidatedUrlParams';
 import "./App.css";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { Toaster, toast } from "sonner";
@@ -523,7 +524,7 @@ const FiltersBar = ({ filters, setFilters }) => {
   );
 };
 
-const StatsOverview = ({ stats }) => {
+const StatsOverview = ({ stats, filteredCount, hasActiveFilters }) => {
   if (!stats) return null;
 
   const totalArticles = stats.total || 0;
@@ -535,8 +536,16 @@ const StatsOverview = ({ stats }) => {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       <Card className="bg-card/50 backdrop-blur-sm">
         <CardContent className="p-4">
-          <p className="text-2xl font-bold">{stats.total || 0}</p>
-          <p className="text-sm text-muted-foreground">Articles analysés</p>
+          <p className="text-2xl font-bold">
+            {hasActiveFilters && filteredCount !== totalArticles
+              ? `${filteredCount}`
+              : stats.total || 0}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {hasActiveFilters && filteredCount !== totalArticles
+              ? `Articles affichés (${stats.total} total)`
+              : 'Articles analysés'}
+          </p>
         </CardContent>
       </Card>
       <Card className="bg-card/50 backdrop-blur-sm">
@@ -654,20 +663,37 @@ const StatsOverview = ({ stats }) => {
 
 // Main Page
 const HomePage = () => {
+  // ✅ VALIDATION URL AUTOMATIQUE
+  const { params: urlParams } = useValidatedUrlParams();
+
   const [articles, setArticles] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
+  const [displayTotal, setDisplayTotal] = useState(75);
+
+  // Synchroniser les états locaux avec les paramètres URL validés
+  const [page, setPage] = useState(urlParams.page || 1);
   const [filters, setFilters] = useState({
-    search: "",
-    sector: "Tous",
-    sentiment: "Tous",
-    minImportance: "0",
-    sort: "recent"
+    search: urlParams.search || "",
+    sector: urlParams.sector || "Tous",
+    sentiment: urlParams.sentiment || "Tous",
+    minImportance: urlParams.minImportance || "0",
+    sort: urlParams.sort || "recent"
   });
-const [displayTotal, setDisplayTotal] = useState(75);
+
+  // Mettre à jour les états quand les paramètres URL changent
+  useEffect(() => {
+    setPage(urlParams.page || 1);
+    setFilters({
+      search: urlParams.search || "",
+      sector: urlParams.sector || "Tous",
+      sentiment: urlParams.sentiment || "Tous",
+      minImportance: urlParams.minImportance?.toString() || "0",
+      sort: urlParams.sort || "recent"
+    });
+  }, [urlParams]);
 
 // Dans le useEffect qui charge les articles
 useEffect(() => {
@@ -684,15 +710,26 @@ useEffect(() => {
     setLoading(true);
     try {
       const data = await fetchArticlesAPI(filters, page);
-      
+
       setArticles(data.articles);
       setTotalCount(data.total);
       setStats(data.stats);
       setLoading(false);
-      
+
     } catch (error) {
-      console.error('Erreur chargement:', error);
-      toast.error("Erreur lors du chargement des articles");
+      console.error('❌ Erreur chargement:', error);
+
+      // Message d'erreur spécifique selon le type
+      if (error.message?.includes('Filtres invalides')) {
+        toast.error("Paramètres de recherche invalides", {
+          description: "Les filtres ont été réinitialisés"
+        });
+      } else {
+        toast.error("Erreur lors du chargement des articles", {
+          description: "Veuillez réessayer dans quelques instants"
+        });
+      }
+
       setLoading(false);
     }
   };
@@ -702,6 +739,13 @@ useEffect(() => {
   }, [page, filters.sector, filters.sentiment, filters.minImportance, filters.sort, filters.search]);
 
   const totalPages = Math.ceil(totalCount / 15);
+
+  // Détection des filtres actifs
+  const hasActiveFilters =
+    filters.search !== "" ||
+    filters.sector !== "Tous" ||
+    filters.sentiment !== "Tous" ||
+    filters.minImportance !== "0";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -717,7 +761,11 @@ useEffect(() => {
         </p>
       </div>
 
-      <StatsOverview stats={stats} />
+      <StatsOverview
+        stats={stats}
+        filteredCount={totalCount}
+        hasActiveFilters={hasActiveFilters}
+      />
       <FiltersBar filters={filters} setFilters={setFilters} />
       <h2 className="sr-only">Liste des articles</h2>
 

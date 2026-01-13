@@ -45,7 +45,7 @@ export const NavigationMenu = ({ isOpen, setIsOpen }) => {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent side="left" className="w-80 p-0 bg-card border-r border-border">
+      <SheetContent side="left" className="w-80 p-0 bg-card border-r border-border safe-area-menu">
         <div className="flex flex-col h-full">
 
           {/* Menu Header avec fond dégradé */}

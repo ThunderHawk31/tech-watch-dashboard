@@ -46,3 +46,21 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Safe area for iPhone notch and bottom bar */
+.safe-area-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-menu {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ensure body respects safe areas on iOS */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

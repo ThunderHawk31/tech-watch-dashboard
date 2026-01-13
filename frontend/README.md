@@ -1,70 +1,99 @@
-# Getting Started with Create React App
+# Frontend - Tech Watch Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Interface React du système de veille technologique automatisé par IA.
 
-## Available Scripts
+## 🎨 Fonctionnalités
 
-In the project directory, you can run:
+### ✅ Implémenté
+- **Dashboard interactif** : Consultation des articles analysés par IA (Claude)
+- **Filtres avancés** : Par secteur (IA, Tech, Finance, Crypto, etc.), importance (1-5⭐), sentiment (Positif/Négatif/Neutre), recherche textuelle
+- **PWA** : Installation sur mobile/desktop, mode offline, icônes optimisées
+- **Statistiques** : Visualisations graphiques des tendances tech avec Recharts
+- **Favoris** : Sauvegarde locale des articles importants (localStorage)
+- **Partage** : Partage natif d'articles via Web Share API
+- **Thème** : Mode clair/sombre avec persistance
+- **Responsive** : Design mobile-first avec Tailwind CSS
+- **Sécurité** : Protection XSS avec DOMPurify, validation Joi
 
-### `npm start`
+### 🔜 Améliorations futures
+- Notifications push pour articles hautement prioritaires
+- Authentification utilisateur (backend déjà prêt)
+- Synchronisation des favoris entre appareils
+- Export des articles en PDF/CSV
+- Historique de lecture
+- Recommandations personnalisées par IA
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Technologies
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Framework** : React 18 + React Router
+- **Styling** : Tailwind CSS + shadcn/ui (composants)
+- **Graphiques** : Recharts
+- **Icônes** : Lucide React
+- **Sécurité** : DOMPurify (XSS), Joi (validation)
+- **PWA** : Service Worker, Web App Manifest
+- **Déploiement** : Vercel
 
-### `npm test`
+## 📦 Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+# Installer les dépendances
+npm install
+# ou
+yarn install
 
-### `npm run build`
+# Lancer en développement
+npm start
+# ou
+yarn start
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# Build pour production
+npm run build
+# ou
+yarn build
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🌐 Variables d'environnement
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Créer un fichier `.env` à la racine du dossier frontend :
 
-### `npm run eject`
+```env
+REACT_APP_API_URL=https://votre-api-n8n.railway.app
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 📱 PWA
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+L'application est installable comme PWA sur :
+- **iOS** : Safari > Partager > Sur l'écran d'accueil
+- **Android** : Chrome > Menu > Installer l'application
+- **Desktop** : Chrome > Icône d'installation dans la barre d'adresse
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🔧 Structure du projet
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+frontend/
+├── public/
+│   ├── icons/           # Icônes PWA (192x192, 512x512, etc.)
+│   └── manifest.json    # Configuration PWA
+├── src/
+│   ├── components/      # Composants React réutilisables
+│   ├── contexts/        # Context API (Theme, Favorites)
+│   ├── hooks/           # Custom hooks
+│   ├── validation/      # Schémas de validation Joi
+│   ├── api.js          # Appels API
+│   ├── App.js          # Composant principal
+│   └── index.js        # Point d'entrée
+```
 
-## Learn More
+## 📊 Fonctionnement
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. L'application récupère les articles analysés par Claude via l'API n8n
+2. Les données sont filtrées et triées côté client
+3. Les favoris sont sauvegardés en localStorage
+4. Le Service Worker permet le mode offline avec cache
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🎨 Personnalisation
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Les couleurs principales du projet sont définies dans [tailwind.config.js](tailwind.config.js) :
+- **Primary** : `#8B5CF6` (Violet)
+- **Secondary** : Dégradé vers secondary
+- **Background** : `#0F172A` (Dark slate)

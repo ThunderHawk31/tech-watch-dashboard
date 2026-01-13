@@ -1,20 +1,19 @@
 # Backend - Tech Watch Dashboard
 
-Backend FastAPI pour le système d'authentification et les futures push notifications.
+Backend FastAPI pour le système d'authentification et les futures fonctionnalités.
 
 ## 🚀 Fonctionnalités
 
 ### ✅ Implémenté
-- **Authentification JWT** (bcrypt + MongoDB)
-  - Inscription (`POST /api/auth/register`)
-  - Connexion (`POST /api/auth/login`)
-  - Profil utilisateur (`GET /api/auth/me`)
+- **Authentification JWT** avec MongoDB
+- Sécurité (bcrypt, CORS, validation des entrées)
+- Routes API RESTful
 
-### 🔜 À venir
-- **Push Notifications**
-  - Abonnement aux notifications
-  - Notification aux utilisateurs inactifs
-  - Trigger depuis n8n pour articles importants
+### 🔜 Améliorations futures
+- Push notifications pour articles importants
+- Gestion des préférences utilisateur
+- API analytics pour statistiques avancées
+- Intégration directe avec n8n pour déclencher des notifications
 
 ## 📦 Installation
 
@@ -27,19 +26,9 @@ venv\Scripts\activate     # Windows
 # Installer les dépendances
 pip install -r requirements.txt
 
-# Copier .env.example vers .env et remplir les valeurs
+# Configuration
 cp .env.example .env
-```
-
-## ⚙️ Configuration
-
-Créer un fichier `.env` avec :
-
-```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=techwatch_db
-JWT_SECRET_KEY=your-super-secret-key
-CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
+# Configurer les variables d'environnement dans .env
 ```
 
 ## 🏃 Lancer le serveur
@@ -48,40 +37,15 @@ CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
 uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API disponible sur : `http://localhost:8000`
-Documentation : `http://localhost:8000/docs`
-
-## 📚 Routes disponibles
-
-### Authentification
-- `POST /api/auth/register` - Créer un compte
-- `POST /api/auth/login` - Se connecter
-- `GET /api/auth/me` - Profil (protégé)
-
-### Root
-- `GET /api/` - Informations API
-
-## 🗄️ Base de données
-
-MongoDB avec collection `users` :
-```json
-{
-  "id": "uuid",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "password": "hashed_with_bcrypt",
-  "created_at": "ISO8601"
-}
-```
+Documentation API disponible sur : `http://localhost:8000/docs`
 
 ## 🔐 Sécurité
 
-- Mots de passe hashés avec **bcrypt**
-- Tokens JWT avec expiration **7 jours**
-- CORS configuré pour Vercel
+- Mots de passe hashés avec bcrypt
+- Tokens JWT avec expiration
+- CORS configuré
+- Validation des entrées avec Pydantic
 
-## 📝 Notes
+## 📝 Note
 
-Le backend n'est **pas encore connecté au frontend**. L'authentification est prête pour les futures fonctionnalités (push notifications).
-
-Frontend lit actuellement les articles directement depuis Google Sheets via n8n Railway.
+Le backend est actuellement préparé pour les futures fonctionnalités d'authentification et de notifications push. Le frontend consomme les articles directement via l'API n8n/Google Sheets.

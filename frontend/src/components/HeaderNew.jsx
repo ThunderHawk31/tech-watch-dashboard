@@ -19,7 +19,7 @@ export const HeaderNew = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border safe-area-header">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
 
