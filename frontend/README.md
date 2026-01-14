@@ -33,32 +33,6 @@ Interface React du système de veille technologique automatisé par IA.
 - **PWA** : Service Worker, Web App Manifest
 - **Déploiement** : Vercel
 
-## 📦 Installation
-
-```bash
-# Installer les dépendances
-npm install
-# ou
-yarn install
-
-# Lancer en développement
-npm start
-# ou
-yarn start
-
-# Build pour production
-npm run build
-# ou
-yarn build
-```
-
-## 🌐 Variables d'environnement
-
-Créer un fichier `.env` à la racine du dossier frontend :
-
-```env
-REACT_APP_API_URL=https://votre-api-n8n.railway.app
-```
 
 ## 📱 PWA
 
