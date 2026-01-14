@@ -52,10 +52,3 @@ frontend/
 2. Les données sont filtrées et triées côté client
 3. Les favoris sont sauvegardés en localStorage
 4. Le Service Worker permet le mode offline avec cache
-
-## 🎨 Personnalisation
-
-Les couleurs principales du projet sont définies dans [tailwind.config.js](tailwind.config.js) :
-- **Primary** : `#8B5CF6` (Violet)
-- **Secondary** : Dégradé vers secondary
-- **Background** : `#0F172A` (Dark slate)
