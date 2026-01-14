@@ -16,22 +16,10 @@ Interface React du système de veille technologique automatisé par IA.
 - **Sécurité** : Protection XSS avec DOMPurify, validation Joi
 
 ### 🔜 Améliorations futures
-- Notifications push pour articles hautement prioritaires
-- Authentification utilisateur (backend déjà prêt)
+- Notifications push pour articles hautement prioritaires ou nouveaux articles sortis
 - Synchronisation des favoris entre appareils
-- Export des articles en PDF/CSV
 - Historique de lecture
 - Recommandations personnalisées par IA
-
-## 🛠️ Technologies
-
-- **Framework** : React 18 + React Router
-- **Styling** : Tailwind CSS + shadcn/ui (composants)
-- **Graphiques** : Recharts
-- **Icônes** : Lucide React
-- **Sécurité** : DOMPurify (XSS), Joi (validation)
-- **PWA** : Service Worker, Web App Manifest
-- **Déploiement** : Vercel
 
 
 ## 📱 PWA
