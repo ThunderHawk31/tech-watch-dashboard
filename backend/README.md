@@ -24,4 +24,4 @@ Backend FastAPI pour le système d'authentification et les futures fonctionnalit
 
 ## 📝 Note
 
-Le backend est actuellement préparé mais n'est pas encore utilisé pour les futures fonctionnalités d'authentification et de notifications push.
+Le backend est actuellement préparé pour les futures fonctionnalités d'authentification et de notifications push.
