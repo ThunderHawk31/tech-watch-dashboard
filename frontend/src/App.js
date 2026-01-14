@@ -187,7 +187,6 @@ const Footer = () => {
               <div className="flex flex-wrap gap-1 pt-2">
                 <span className="text-xs px-2 py-0.5 bg-muted rounded-full">React</span>
                 <span className="text-xs px-2 py-0.5 bg-muted rounded-full">n8n</span>
-                <span className="text-xs px-2 py-0.5 bg-muted rounded-full">Claude AI</span>
               </div>
             </div>
           </div>
@@ -208,12 +207,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Technologies (ligne du bas) */}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            Propulsé par n8n • Claude API • Google Sheets • Railway • Vercel
-          </p>
-        </div>
       </div>
     </footer>
   );
@@ -667,7 +660,7 @@ const HomePage = () => {
     minImportance: "0",
     sort: "recent"
   });
-const [displayTotal, setDisplayTotal] = useState(111);
+const [displayTotal, setDisplayTotal] = useState(112);
 
 // Dans le useEffect qui charge les articles
 useEffect(() => {
