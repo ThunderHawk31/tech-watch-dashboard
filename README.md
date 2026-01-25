@@ -276,11 +276,17 @@ pytest
 
 ## 📸 Screenshots
 
- C/Projet/techwatch_dashboard/screenshots/dashboard.png 
+### Dashboard - Article Feed
+![Dashboard](https://raw.githubusercontent.com/ThunderHawk31/tech-watch-dashboard/main/screenshots/dashboard.png)
+*Main dashboard displaying analyzed articles with filters, importance ratings, and quick actions*
 
- C/Projet/techwatch_dashboard/screenshots/stats.png
+### Statistics & Analytics
+![Statistics](https://raw.githubusercontent.com/ThunderHawk31/tech-watch-dashboard/main/screenshots/stats.png)
+*Visual analytics showing article distribution by sector and comprehensive insights*
 
- C/Projet/techwatch_dashboard/screenshots/about.png
+### About Section
+![About](https://raw.githubusercontent.com/ThunderHawk31/tech-watch-dashboard/main/screenshots/about.png)
+*Project overview explaining the automated workflow and AI-powered analysis*
 
 ---
 
