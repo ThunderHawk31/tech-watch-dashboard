@@ -276,9 +276,11 @@ pytest
 
 ## 📸 Screenshots
 
-./screenshots/dashboard.png
-./screenshots/stats.png
-./screenshots/about.png
+ C/Projet/techwatch_dashboard/screenshots/dashboard.png 
+
+ C/Projet/techwatch_dashboard/screenshots/stats.png
+
+ C/Projet/techwatch_dashboard/screenshots/about.png
 
 ---
 
