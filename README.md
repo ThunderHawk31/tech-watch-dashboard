@@ -276,7 +276,9 @@ pytest
 
 ## 📸 Screenshots
 
-*Coming soon*
+./screenshots/dashboard.png
+./screenshots/stats.png
+./screenshots/about.png
 
 ---
 
