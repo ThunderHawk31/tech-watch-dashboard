@@ -1,4 +1,4 @@
-const CACHE_NAME = 'techwatch-v2';
+const CACHE_NAME = 'techwatch-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Resources to cache immediately
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip API calls - always fetch from network
-  if (url.href.includes('/api/') || url.href.includes('railway.app')) {
+  if (url.href.includes('/api/') || url.href.includes('railway.app') || url.href.includes('supabase.co')) {
     return;
   }
 

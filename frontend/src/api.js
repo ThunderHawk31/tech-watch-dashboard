@@ -1,7 +1,8 @@
 import { validateFilters, sanitizeSearch } from './validation/filters';
 
-// ✅ URL récupérée depuis les variables d'environnement
-const N8N_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5678/webhook/api/articles';
+// ✅ Supabase REST API (remplace n8n/Google Sheets)
+const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co/rest/v1/techwatch_articles';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaGdnbGxpZHR1d3RjeWdzdXBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4OTg4MDUsImV4cCI6MjA4ODQ3NDgwNX0.ou14ziQMriVW3X9xKchH4wJ8YfKWWh_vQkXy6O3hgSI';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CACHE_KEY = 'tech_watch_cache';
@@ -15,7 +16,6 @@ function getCache() {
     const { data, timestamp } = JSON.parse(cached);
     const now = Date.now();
     
-    // Vérifie si le cache est encore valide
     if (now - timestamp < CACHE_DURATION) {
       console.log('✅ Cache valide (âge: ' + Math.round((now - timestamp) / 1000) + 's)');
       return data;
@@ -42,48 +42,96 @@ function setCache(data) {
   }
 }
 
+// Mapper les noms Supabase (anglais) → noms frontend (français)
+function mapArticle(row) {
+  return {
+    id: row.article_id,
+    titre: row.title || '',
+    date: row.published_at,
+    url: row.url || '',
+    analyse: row.analysis || '',
+    importance: row.importance || 0,
+    sentiment: row.sentiment || 'Neutre',
+    actions: row.tickers || '',
+    secteur: row.sector || 'Autre',
+    tokens: row.tokens || 0
+  };
+}
+
+// Calculer les stats à partir des articles
+function computeStats(articles) {
+  const total = articles.length;
+  
+  // Comptage par secteur
+  const parSecteur = {};
+  articles.forEach(a => {
+    const s = a.secteur || 'Autre';
+    parSecteur[s] = (parSecteur[s] || 0) + 1;
+  });
+  
+  // Nombre de sentiments positifs
+  const sentimentPositif = articles.filter(a => a.sentiment === 'Positif').length;
+  
+  // Importance moyenne
+  const importanceMoyenne = total > 0
+    ? (articles.reduce((sum, a) => sum + (a.importance || 0), 0) / total).toFixed(2)
+    : '0';
+  
+  return { total, parSecteur, sentimentPositif, importanceMoyenne };
+}
+
+// Fetch tous les articles depuis Supabase
+async function fetchFromSupabase() {
+  console.log('🔄 Récupération des données depuis Supabase...');
+  
+  const response = await fetch(
+    `${SUPABASE_URL}?select=*&order=published_at.desc`,
+    {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const rows = await response.json();
+  const articles = rows.map(mapArticle);
+  const stats = computeStats(articles);
+
+  return { articles, stats };
+}
+
 export async function fetchArticles(filters = {}, page = 1) {
-  // ✅ VALIDATION AVANT TOUTE REQUÊTE
+  // Validation
   const validationResult = validateFilters({ ...filters, page });
 
   if (!validationResult.isValid) {
     console.error('❌ Validation errors:', validationResult.errors);
-
-    // Affiche les erreurs de façon lisible
     const errorMessages = validationResult.errors
       .map(e => `${e.field}: ${e.message}`)
       .join(', ');
-
     throw new Error(`Filtres invalides: ${errorMessages}`);
   }
 
-  // ✅ Utilise les valeurs VALIDÉES (pas les filtres bruts)
   const validFilters = validationResult.value;
 
-  // ✅ Sanitize la recherche (couche supplémentaire)
   if (validFilters.search) {
     validFilters.search = sanitizeSearch(validFilters.search);
   }
 
   try {
-    // Essaye d'utiliser le cache
+    // Cache
     const cachedData = getCache();
-
     if (cachedData) {
       return filterAndPaginate(cachedData, validFilters, validFilters.page);
     }
 
-    // Sinon fetch
-    console.log('🔄 Récupération des données depuis n8n...');
-    const response = await fetch(N8N_API_URL);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Stocke en cache
+    // Fetch depuis Supabase
+    const data = await fetchFromSupabase();
     setCache(data);
 
     return filterAndPaginate(data, validFilters, validFilters.page);
@@ -110,7 +158,8 @@ function filterAndPaginate(data, filters, page) {
     const search = filters.search.toLowerCase();
     articles = articles.filter(article =>
       article.analyse?.toLowerCase().includes(search) ||
-      article.secteur?.toLowerCase().includes(search)
+      article.secteur?.toLowerCase().includes(search) ||
+      article.titre?.toLowerCase().includes(search)
     );
   }
   
@@ -155,8 +204,7 @@ export async function fetchStats() {
       return cachedData.stats || {};
     }
     
-    const response = await fetch(N8N_API_URL);
-    const data = await response.json();
+    const data = await fetchFromSupabase();
     setCache(data);
     return data.stats || {};
   } catch (error) {
