@@ -15,7 +15,7 @@ import {
   Search, Star, ExternalLink, Copy,
   TrendingUp, TrendingDown, Minus, BookOpen, Info,
   ChevronLeft, ChevronRight,
-  Zap, Cpu, Coins, Leaf, Heart, HelpCircle, Github, Linkedin, RefreshCw
+  Zap, Cpu, Coins, Leaf, Heart, HelpCircle, Shield, Github, Linkedin, RefreshCw
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { OfflineIndicator } from './components/InstallPrompt';
@@ -27,26 +27,12 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { FavoritesProvider, useFavorites as useFavoritesContext } from './contexts/FavoritesContext';
 import { HeaderNew } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
-import DOMPurify from 'dompurify';
-
-// ============================================================
-// SÉCURITÉ : Sanitization HTML (Protection XSS)
-// ============================================================
-const sanitizeHTML = (html) => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'em', 'b', 'i', 'u',
-      'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'a', 'blockquote', 'code', 'pre'
-    ],
-    ALLOWED_ATTR: {
-      'a': ['href', 'target', 'rel'],
-      'code': ['class']
-    },
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
-  });
-};
+import {
+  sanitizeHTML,
+  sanitizeText,
+  sanitizeURL,
+  sanitizeArticle
+} from './utils/sanitizer';
 
 // Sector colors and icons
 const sectorConfig = {
@@ -56,6 +42,7 @@ const sectorConfig = {
   "Crypto": { color: "#F59E0B", bg: "bg-amber-500/20", text: "text-amber-400", icon: Coins },
   "Énergie": { color: "#EAB308", bg: "bg-yellow-500/20", text: "text-yellow-400", icon: Leaf },
   "Santé": { color: "#EC4899", bg: "bg-pink-500/20", text: "text-pink-400", icon: Heart },
+  "Cybersécurité": { color: "#EF4444", bg: "bg-red-500/20", text: "text-red-400", icon: Shield },
   "Autre": { color: "#6B7280", bg: "bg-gray-500/20", text: "text-gray-400", icon: HelpCircle },
 };
 
@@ -296,7 +283,7 @@ const Footer = () => {
           </div>
         </div>
         <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">
-          {getTitle()}
+          {sanitizeText(getTitle())}
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-3">
@@ -308,7 +295,7 @@ const Footer = () => {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground line-clamp-3">
-          {article.analyse?.replace(/[#*`]/g, "").substring(0, 150)}...
+          {sanitizeText(article.analyse || '').substring(0, 150)}...
         </p>
         {article.actions && article.actions.length > 0 && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
@@ -390,7 +377,7 @@ const ArticleModal = ({ article, open, onClose }) => {
 
         <div className="flex items-center gap-2 pt-2 border-t border-border">
           <Button asChild className="flex-1 gap-2">
-            <a href={article.url} target="_blank" rel="noopener noreferrer">
+            <a href={sanitizeURL(article.url)} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4" />
               Voir l'article original
             </a>
@@ -464,6 +451,7 @@ const FiltersBar = ({ filters, setFilters }) => {
               <SelectItem value="Crypto">Crypto</SelectItem>
               <SelectItem value="Énergie">Énergie</SelectItem>
               <SelectItem value="Santé">Santé</SelectItem>
+              <SelectItem value="Cybersécurité">Cybersécurité</SelectItem>
               <SelectItem value="Autre">Autre</SelectItem>
             </SelectContent>
           </Select>

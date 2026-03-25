@@ -14,6 +14,7 @@ const sectorConfig = {
   "Crypto": { color: "#F59E0B" },
   "Énergie": { color: "#EAB308" },
   "Santé": { color: "#EC4899" },
+  "Cybersécurité": { color: "#EF4444" },
   "Autre": { color: "#6B7280" },
 };
 
