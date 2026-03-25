@@ -25,10 +25,10 @@ export const filtersSchema = Joi.object({
 
   // Secteur (whitelist stricte)
   sector: Joi.string()
-    .valid('Tous', 'IA', 'Tech', 'Finance', 'Crypto', 'Énergie', 'Santé', 'Autre')
+    .valid('Tous', 'IA', 'Tech', 'Finance', 'Crypto', 'Énergie', 'Santé', 'Cybersécurité', 'Immobilier', 'Autre')
     .default('Tous')
     .messages({
-      'any.only': 'Secteur invalide. Valeurs acceptées : Tous, IA, Tech, Finance, Crypto, Énergie, Santé, Autre'
+      'any.only': 'Secteur invalide. Valeurs acceptées : Tous, IA, Tech, Finance, Crypto, Énergie, Santé, Cybersécurité, Immobilier, Autre'
     }),
 
   // Sentiment (whitelist stricte)
