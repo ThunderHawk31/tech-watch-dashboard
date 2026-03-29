@@ -234,6 +234,26 @@ const Footer = () => {
     return "Article de veille technologique";
   };
   
+  const getArticlePreview = (analyse, maxChars = 200) => {
+    if (!analyse) return '';
+    const match = analyse.match(/RÉSUMÉ EXÉCUTIF[^\n]*\n([\s\S]*?)(?=\n#\s|\n📰|\n🏷️|\n📊|\n🔑|\n💼|\n⚡|\n📈|\n💹|$)/i);
+    const raw = match ? match[1] : analyse;
+    const cleaned = raw
+      .replace(/#{1,6}\s*/g, '')
+      .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[📰🏷️📊🔑💼⚡📈💹]/g, '')
+      .replace(/\(([^)]+)\)/g, '$1')
+      .replace(/\n+/g, ' ')
+      .trim();
+    if (!cleaned) return '';
+    if (cleaned.length <= maxChars) return cleaned;
+    const lastDot = cleaned.lastIndexOf('.', maxChars);
+    if (lastDot >= maxChars * 0.5) return cleaned.substring(0, lastDot + 1);
+    return cleaned.substring(0, maxChars) + '…';
+  };
+
   const handleCopyLink = (e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(article.url);
@@ -295,7 +315,7 @@ const Footer = () => {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground line-clamp-3">
-          {sanitizeText(article.analyse || '').substring(0, 150)}...
+          {getArticlePreview(article.analyse)}
         </p>
         {article.actions && article.actions.length > 0 && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
