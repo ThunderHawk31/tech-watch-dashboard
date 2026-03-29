@@ -350,7 +350,7 @@ const ArticleModal = ({ article, open, onClose }) => {
             </div>
           </div>
           <DialogTitle className="text-xl leading-tight pr-8">
-            {article.url.split('/').pop().replace(/-/g, ' ')}
+            {article.titre || article.url.split('/').pop().replace(/-/g, ' ')}
           </DialogTitle>
           <DialogDescription>
             {formatDate(article.date)}
@@ -440,19 +440,29 @@ const FiltersBar = ({ filters, setFilters }) => {
             value={filters.sector}
             onValueChange={(value) => handleFilterChange('sector', value)}
           >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Secteur" />
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Secteur">
+                {filters.sector && filters.sector !== "Tous" && sectorConfig[filters.sector] ? (
+                  <span className="flex items-center gap-1.5">
+                    {(() => { const Icon = sectorConfig[filters.sector].icon; return <Icon className="w-3.5 h-3.5" style={{ color: sectorConfig[filters.sector].color }} />; })()}
+                    {filters.sector}
+                  </span>
+                ) : "Tous secteurs"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Tous">Tous secteurs</SelectItem>
-              <SelectItem value="IA">IA</SelectItem>
-              <SelectItem value="Tech">Tech</SelectItem>
-              <SelectItem value="Finance">Finance</SelectItem>
-              <SelectItem value="Crypto">Crypto</SelectItem>
-              <SelectItem value="Énergie">Énergie</SelectItem>
-              <SelectItem value="Santé">Santé</SelectItem>
-              <SelectItem value="Cybersécurité">Cybersécurité</SelectItem>
-              <SelectItem value="Autre">Autre</SelectItem>
+              {Object.entries(sectorConfig).map(([name, cfg]) => {
+                const Icon = cfg.icon;
+                return (
+                  <SelectItem key={name} value={name}>
+                    <span className="flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+                      {name}
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
