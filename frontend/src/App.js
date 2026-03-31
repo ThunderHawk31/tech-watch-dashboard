@@ -28,7 +28,6 @@ import { FavoritesProvider, useFavorites as useFavoritesContext } from './contex
 import { HeaderNew } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
 import {
-  sanitizeHTML,
   sanitizeText,
   sanitizeURL,
   sanitizeArticle
@@ -339,6 +338,40 @@ const Footer = () => {
   );
 });
 
+const parseAnalysis = (analyse) => {
+  if (!analyse) return {};
+  const clean = (text) => text
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[📰🏷️📊🔑💼⚡📈💹🌍]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const extract = (label) => {
+    const re = new RegExp(`${label}[^\\n#]*[\\n:]?([\\s\\S]*?)(?=\\s*#|$)`, 'i');
+    const m = analyse.match(re);
+    return m ? clean(m[1]) : null;
+  };
+
+  const resume = extract('RÉSUMÉ EXÉCUTIF');
+  const impact = extract('IMPACT') ;
+  const opportunites = extract('OPPORTUNIT');
+
+  const pointsClesMatch = analyse.match(/POINTS? CLÉS?[^\n#]*[\n:]?([\s\S]*?)(?=\s*#|$)/i);
+  let pointsCles = null;
+  if (pointsClesMatch) {
+    pointsCles = pointsClesMatch[1]
+      .split(/\n|(?<=\.)(?=\s*[-•*]|\s+\d+\.)/)
+      .map(l => clean(l).replace(/^[-•*\d.]+\s*/, ''))
+      .filter(l => l.length > 5);
+    if (pointsCles.length === 0) pointsCles = null;
+  }
+
+  return { resume, pointsCles, impact, opportunites };
+};
+
 const ArticleModal = ({ article, open, onClose }) => {
   if (!article) return null;
 
@@ -378,10 +411,47 @@ const ArticleModal = ({ article, open, onClose }) => {
         </DialogHeader>
         
         <ScrollArea className="max-h-[50vh] pr-4">
-          <div
-            className="text-sm whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: sanitizeHTML(article.analyse || '') }}
-          />
+          {(() => {
+            const { resume, pointsCles, impact, opportunites } = parseAnalysis(article.analyse);
+            return (
+              <div className="flex flex-col gap-4 text-sm">
+                {resume && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Résumé</p>
+                    <p className="text-foreground leading-relaxed">{resume}</p>
+                  </div>
+                )}
+                {pointsCles && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Points clés</p>
+                    <ul className="flex flex-col gap-1">
+                      {pointsCles.map((pt, i) => (
+                        <li key={i} className="flex gap-2 text-foreground leading-relaxed">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {impact && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Impact marchés</p>
+                    <p className="text-foreground leading-relaxed">{impact}</p>
+                  </div>
+                )}
+                {opportunites && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Opportunités</p>
+                    <p className="text-foreground leading-relaxed">{opportunites}</p>
+                  </div>
+                )}
+                {!resume && !pointsCles && !impact && !opportunites && (
+                  <p className="text-muted-foreground">{article.analyse}</p>
+                )}
+              </div>
+            );
+          })()}
         </ScrollArea>
 
         {article.actions && article.actions.length > 0 && (

@@ -111,3 +111,10 @@ agenthub/agents/youtube/db
 chainlit.md
 .chainlit
 .ac
+
+# Claude Code & local config
+CLAUDE.md
+*.backup
+schema.md
+"Analyseur Article Finance-Auto RSS.json"
+Analyseur*.json
