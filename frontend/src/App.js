@@ -807,11 +807,6 @@ const HomePage = () => {
   });
 const [displayTotal, setDisplayTotal] = useState(112);
 
-// Dans le useEffect qui charge les articles
-useEffect(() => {
-  fetchArticles();
-}, [page, filters.sector, filters.sentiment, filters.minImportance, filters.sort, filters.search]);
-
 // Ajoute un autre useEffect pour mettre à jour displayTotal
 useEffect(() => {
   if (totalCount > 0) {
@@ -980,8 +975,8 @@ const AboutPage = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-2">Collecte automatique (n8n)</h3>
                 <p className="text-muted-foreground">
-                  Un workflow n8n s'exécute <strong>2 fois par jour</strong> (00:00 et 12:00) pour récupérer 
-                  les flux RSS de sources tech de référence : TechCrunch, The Verge, Ars Technica, etc.
+                  Un workflow n8n s'exécute <strong>2 fois par jour</strong> (6h30 et 18h30) pour récupérer
+                  les flux RSS de sources de référence : TechCrunch, O'Reilly, The Hacker News, CoinDesk, HuggingFace, etc.
                 </p>
               </div>
             </div>
@@ -1007,10 +1002,10 @@ const AboutPage = () => {
                 3
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-2">Stockage (Google Sheets)</h3>
+                <h3 className="font-semibold text-lg mb-2">Stockage (Supabase)</h3>
                 <p className="text-muted-foreground">
-                  Les analyses sont automatiquement enregistrées dans Google Sheets qui sert de base de données, 
-                  permettant un accès facile et une sauvegarde sécurisée.
+                  Les analyses sont automatiquement enregistrées dans Supabase (PostgreSQL),
+                  avec dédoublonnage par URL et accès direct depuis le frontend.
                 </p>
               </div>
             </div>
@@ -1064,7 +1059,7 @@ const AboutPage = () => {
                 <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-green-500/20 flex items-center justify-center">
                   <TrendingUp className="w-8 h-8 text-green-500" />
                 </div>
-                <p className="text-sm font-medium">Google Sheets</p>
+                <p className="text-sm font-medium">Supabase</p>
               </div>
               
               <ChevronRight className="w-6 h-6 text-muted-foreground hidden sm:block" />
@@ -1151,7 +1146,7 @@ const AboutPage = () => {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="px-3 py-1">n8n (Workflow automation)</Badge>
                 <Badge variant="secondary" className="px-3 py-1">Claude 4 Sonnet API</Badge>
-                <Badge variant="secondary" className="px-3 py-1">Google Sheets API</Badge>
+                <Badge variant="secondary" className="px-3 py-1">Supabase (PostgreSQL)</Badge>
                 <Badge variant="secondary" className="px-3 py-1">Railway (hosting)</Badge>
               </div>
             </div>
@@ -1183,7 +1178,7 @@ const AboutPage = () => {
             <div>
               <h3 className="font-semibold mb-3 text-amber-400">🛠️ Outils & Services</h3>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="px-3 py-1">Google Sheets (Database)</Badge>
+                <Badge variant="secondary" className="px-3 py-1">Supabase (Database)</Badge>
                 <Badge variant="secondary" className="px-3 py-1">RSS Feeds</Badge>
                 <Badge variant="secondary" className="px-3 py-1">localStorage (Cache)</Badge>
               </div>

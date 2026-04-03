@@ -85,7 +85,7 @@ async function fetchFromSupabase() {
   console.log('🔄 Récupération des données depuis Supabase...');
   
   const response = await fetch(
-    `${SUPABASE_URL}?select=*&order=published_at.desc`,
+    `${SUPABASE_URL}?select=article_id,title,published_at,url,analysis,importance,sentiment,tickers,sector&order=published_at.desc`,
     {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
