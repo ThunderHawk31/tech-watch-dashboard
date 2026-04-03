@@ -77,6 +77,14 @@ export const HeaderNew = () => {
                 )}
               </Link>
               <Link
+                to="/tendances"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/tendances') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                Tendances
+              </Link>
+              <Link
                 to="/about"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   isActive('/about') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'

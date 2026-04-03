@@ -5,7 +5,7 @@ import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import {
   Home, Bookmark, BarChart3, Info,
-  Sun, Moon, Zap, Sparkles
+  Sun, Moon, Zap, Sparkles, TrendingUp
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFavorites } from "../contexts/FavoritesContext";
@@ -28,6 +28,12 @@ export const NavigationMenu = ({ isOpen, setIsOpen }) => {
       icon: Bookmark,
       description: `${favorites.length} articles sauvegardés`,
       badge: favorites.length
+    },
+    {
+      path: "/tendances",
+      label: "Tendances",
+      icon: TrendingUp,
+      description: "Secteurs chauds cette semaine"
     },
     {
       path: "/stats",
