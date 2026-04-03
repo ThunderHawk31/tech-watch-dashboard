@@ -196,6 +196,25 @@ function filterAndPaginate(data, filters, page) {
   };
 }
 
+export async function fetchSectorHeat() {
+  try {
+    const response = await fetch(
+      'https://bdhggllidtuwtcygsupk.supabase.co/rest/v1/sector_heat?select=*',
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Erreur sector_heat:', error);
+    return [];
+  }
+}
+
 export async function fetchStats() {
   try {
     const cachedData = getCache();

@@ -1,4 +1,4 @@
-import { fetchArticles as fetchArticlesAPI } from './api';
+import { fetchArticles as fetchArticlesAPI, fetchSectorHeat } from './api';
 import { validateFilters } from './validation/filters';
 import { useState, useEffect, lazy, Suspense, memo } from "react";
 import "./App.css";
@@ -733,6 +733,42 @@ const StatsOverview = ({ stats }) => {
   );
 };
 
+const SectorHeatWidget = () => {
+  const [sectors, setSectors] = useState([]);
+
+  useEffect(() => {
+    fetchSectorHeat().then(setSectors);
+  }, []);
+
+  if (!sectors.length) return null;
+
+  const max = sectors[0]?.heat_score || 1;
+
+  return (
+    <div className="mb-6">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Secteurs chauds cette semaine</p>
+      <div className="flex flex-wrap gap-2">
+        {sectors.map((s) => {
+          const cfg = sectorConfig[s.sector] || sectorConfig["Autre"];
+          const Icon = cfg.icon;
+          const intensity = Math.round((s.heat_score / max) * 100);
+          return (
+            <div
+              key={s.sector}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/60 border border-border text-sm"
+              title={`Score : ${s.heat_score}`}
+            >
+              <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+              <span>{s.sector}</span>
+              <span className="text-xs text-muted-foreground ml-1">{intensity}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // Main Page
 const HomePage = () => {
   const [articles, setArticles] = useState([]);
@@ -799,6 +835,7 @@ useEffect(() => {
       </div>
 
       <StatsOverview stats={stats} />
+      <SectorHeatWidget />
       <FiltersBar filters={filters} setFilters={setFilters} />
       <h2 className="sr-only">Liste des articles</h2>
 
