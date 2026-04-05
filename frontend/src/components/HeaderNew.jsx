@@ -100,13 +100,6 @@ export const HeaderNew = () => {
             <div className="flex items-center gap-3">
               {/* Desktop: Boutons d'actions complets */}
               <div className="hidden md:flex items-center gap-3">
-                <button
-                  onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}
-                  className="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground transition-colors flex items-center gap-1.5"
-                  aria-label="Changer la langue"
-                >
-                  🌐 {lang === 'fr' ? 'EN' : 'FR'}
-                </button>
                 <InstallButton />
 
                 <button

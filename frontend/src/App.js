@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./components/ui/dialog";
 import { ScrollArea } from "./components/ui/scroll-area";
 import {
-  Search, Star, ExternalLink, Copy,
+  Search, Star, ExternalLink, Copy, Languages,
   TrendingUp, TrendingDown, Minus, BookOpen, Info,
   ChevronLeft, ChevronRight,
   Zap, Cpu, Coins, Leaf, Heart, HelpCircle, Shield, Github, Linkedin, RefreshCw
@@ -201,7 +201,7 @@ const Footer = () => {
 
   const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker }) => {
   const { isFavorite, toggleFavorite } = useFavoritesContext();
-  const { lang } = useLang();
+  const { lang, setLang } = useLang();
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
   const SectorIcon = sector.icon;
@@ -306,8 +306,21 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">
-          {sanitizeText(getTitle())}
+        <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors flex items-start justify-between gap-2">
+          <span>{sanitizeText(getTitle())}</span>
+          {(article.titre_en) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setLang(lang === 'fr' ? 'en' : 'fr'); }}
+              className={`shrink-0 mt-0.5 p-1 rounded-md transition-colors ${
+                lang === 'en'
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+              title={lang === 'fr' ? 'Voir en anglais' : 'Voir en français'}
+            >
+              <Languages className="w-3.5 h-3.5" />
+            </button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-3">
