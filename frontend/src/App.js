@@ -1,4 +1,5 @@
 import { fetchArticles as fetchArticlesAPI, fetchSectorHeat } from './api';
+import { LangProvider, useLang } from './contexts/LangContext';
 import { validateFilters } from './validation/filters';
 import { useState, useEffect, lazy, Suspense, memo } from "react";
 import "./App.css";
@@ -198,16 +199,20 @@ const Footer = () => {
   );
 };
 
-  const ArticleCard = memo(({ article, onOpenModal }) => {
+  const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker }) => {
   const { isFavorite, toggleFavorite } = useFavoritesContext();
+  const { lang } = useLang();
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
   const SectorIcon = sector.icon;
   const SentimentIcon = sentiment.icon;
-  
+
   const isArticleFavorite = isFavorite(article.url);
 
   const getTitle = () => {
+    if (lang === 'en' && article.titre_en && article.titre_en.length > 5) {
+      return article.titre_en;
+    }
     if (article.titre && article.titre !== 'undefined' && article.titre.length > 5) {
       let cleanTitle = article.titre
         .replace(/^\(/, '')
@@ -320,7 +325,16 @@ const Footer = () => {
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className="text-xs text-muted-foreground">Actions :</span>
             {(article.actions || []).map((action, idx) => (
-              <Badge key={idx} variant="outline" className="text-xs">
+              <Badge
+                key={idx}
+                variant="outline"
+                className={`text-xs cursor-pointer transition-colors ${
+                  activeTicker === action
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'hover:bg-primary/10'
+                }`}
+                onClick={(e) => { e.stopPropagation(); onTickerClick?.(action); }}
+              >
                 {action}
               </Badge>
             ))}
@@ -375,6 +389,10 @@ const parseAnalysis = (analyse) => {
 const ArticleModal = ({ article, open, onClose }) => {
   if (!article) return null;
 
+  const { lang } = useLang();
+  const modalTitle = lang === 'en' && article.titre_en ? article.titre_en
+    : (article.titre || article.url.split('/').pop().replace(/-/g, ' '));
+
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
   const SectorIcon = sector.icon;
@@ -403,7 +421,7 @@ const ArticleModal = ({ article, open, onClose }) => {
             </div>
           </div>
           <DialogTitle className="text-xl leading-tight pr-8">
-            {article.titre || article.url.split('/').pop().replace(/-/g, ' ')}
+            {modalTitle}
           </DialogTitle>
           <DialogDescription>
             {formatDate(article.date)}
@@ -803,8 +821,14 @@ const HomePage = () => {
     sector: "Tous",
     sentiment: "Tous",
     minImportance: "0",
-    sort: "recent"
+    sort: "recent",
+    ticker: ""
   });
+
+  const handleTickerClick = (ticker) => {
+    setFilters(f => ({ ...f, ticker: f.ticker === ticker ? "" : ticker }));
+    setPage(1);
+  };
 const [displayTotal, setDisplayTotal] = useState(112);
 
 // Ajoute un autre useEffect pour mettre à jour displayTotal
@@ -832,7 +856,7 @@ useEffect(() => {
 
   useEffect(() => {
     fetchArticles();
-  }, [page, filters.sector, filters.sentiment, filters.minImportance, filters.sort, filters.search]);
+  }, [page, filters.sector, filters.sentiment, filters.minImportance, filters.sort, filters.search, filters.ticker]);
 
   const totalPages = Math.ceil(totalCount / 15);
 
@@ -883,6 +907,8 @@ useEffect(() => {
       <ArticleCard
         article={article}
         onOpenModal={setSelectedArticle}
+        onTickerClick={handleTickerClick}
+        activeTicker={filters.ticker}
       />
     </div>
   ))}
@@ -1371,12 +1397,14 @@ function AppWrapper() {
     <BrowserRouter>
       <OfflineIndicator />
       <ThemeProvider>
+        <LangProvider>
         <FavoritesProvider>
           <IOSInstallPrompt />
           <InstallPWA />
           <App />
           <Toaster position="top-right" richColors />
         </FavoritesProvider>
+        </LangProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

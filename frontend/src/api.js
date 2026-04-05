@@ -47,6 +47,7 @@ function mapArticle(row) {
   return {
     id: row.article_id,
     titre: row.title || '',
+    titre_en: row.title_en || '',
     date: row.published_at,
     url: row.url || '',
     analyse: row.analysis || '',
@@ -85,7 +86,7 @@ async function fetchFromSupabase() {
   console.log('🔄 Récupération des données depuis Supabase...');
   
   const response = await fetch(
-    `${SUPABASE_URL}?select=article_id,title,published_at,url,analysis,importance,sentiment,tickers,sector&order=published_at.desc`,
+    `${SUPABASE_URL}?select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&order=published_at.desc`,
     {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -175,7 +176,13 @@ function filterAndPaginate(data, filters, page) {
     const minImp = parseInt(filters.minImportance);
     articles = articles.filter(article => article.importance >= minImp);
   }
-  
+
+  if (filters.ticker) {
+    articles = articles.filter(article =>
+      (article.actions || []).some(t => t.toUpperCase() === filters.ticker.toUpperCase())
+    );
+  }
+
   // Trier
   if (filters.sort === "recent") {
     articles.sort((a, b) => new Date(b.date) - new Date(a.date));

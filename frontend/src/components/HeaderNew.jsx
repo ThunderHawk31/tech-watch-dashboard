@@ -4,6 +4,7 @@ import { Bookmark, Zap, Menu, Sun, Moon } from "lucide-react";
 import { NavigationMenu } from "./NavigationMenu";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { useLang } from "../contexts/LangContext";
 import { Badge } from "./ui/badge";
 import { InstallButton } from './InstallButton';
 
@@ -11,6 +12,7 @@ export const HeaderNew = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { favorites, count } = useFavorites();
   const { isDark, setIsDark } = useTheme();
+  const { lang, setLang } = useLang();
   const location = useLocation();
 
   const isActive = (path) => {
@@ -98,6 +100,13 @@ export const HeaderNew = () => {
             <div className="flex items-center gap-3">
               {/* Desktop: Boutons d'actions complets */}
               <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}
+                  className="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground transition-colors flex items-center gap-1.5"
+                  aria-label="Changer la langue"
+                >
+                  🌐 {lang === 'fr' ? 'EN' : 'FR'}
+                </button>
                 <InstallButton />
 
                 <button
