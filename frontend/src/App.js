@@ -870,8 +870,23 @@ const HomePage = () => {
   // Fermer le modal et nettoyer l'URL
   const handleCloseModal = () => {
     setSelectedArticle(null);
-    setSearchParams({});
+    const sectors = filters.sectors || [];
+    if (sectors.length > 0) {
+      setSearchParams({ categories: sectors.join(',') });
+    } else {
+      setSearchParams({});
+    }
   };
+
+  // Sync URL quand les secteurs sélectionnés changent
+  useEffect(() => {
+    const sectors = filters.sectors || [];
+    if (sectors.length > 0) {
+      setSearchParams(prev => { prev.set('categories', sectors.join(',')); return prev; });
+    } else {
+      setSearchParams(prev => { prev.delete('categories'); return prev; });
+    }
+  }, [filters.sectors]); // eslint-disable-line
 
 const [displayTotal, setDisplayTotal] = useState(112);
 
@@ -909,8 +924,13 @@ useEffect(() => {
   };
 
   useEffect(() => {
+    setPage(1);
     fetchArticles();
-  }, [page, filters.sector, filters.sentiment, filters.minImportance, filters.sort, filters.search, filters.ticker]);
+  }, [filters.sectors, filters.sentiment, filters.minImportance, filters.sort, filters.search, filters.ticker]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [page]);
 
   const totalPages = Math.ceil(totalCount / 15);
 
