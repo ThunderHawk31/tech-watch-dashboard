@@ -890,7 +890,7 @@ useEffect(() => {
     fetchArticleById(articleId).then(a => {
       if (a) setSelectedArticle(a);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
   const fetchArticles = async () => {
     setLoading(true);
     try {
