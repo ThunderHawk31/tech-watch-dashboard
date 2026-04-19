@@ -222,6 +222,28 @@ export async function fetchSectorHeat() {
   }
 }
 
+export async function fetchArticleById(id) {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?article_id=eq.${id}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    if (!rows.length) return null;
+    return mapArticle(rows[0]);
+  } catch (error) {
+    console.error('❌ Erreur fetchArticleById:', error);
+    return null;
+  }
+}
+
+
 export async function fetchStats() {
   try {
     const cachedData = getCache();

@@ -26,9 +26,11 @@ Via Tech Watch - Veille IA & Tech automatisée`;
     return text;
   };
 
-  // Générer l'URL de partage
+  // Générer l'URL de partage — lien direct vers l'article sur TechWatch
   const getShareUrl = () => {
-    // Toujours partager l'URL de mon site
+    if (article?.id) {
+      return `${window.location.origin}/?article=${article.id}`;
+    }
     return window.location.origin;
   };
 

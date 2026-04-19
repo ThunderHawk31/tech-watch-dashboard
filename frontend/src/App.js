@@ -1,9 +1,9 @@
-import { fetchArticles as fetchArticlesAPI, fetchSectorHeat } from './api';
+import { fetchArticles as fetchArticlesAPI, fetchSectorHeat, fetchArticleById } from './api';
 import { LangProvider, useLang } from './contexts/LangContext';
 import { validateFilters } from './validation/filters';
 import { useState, useEffect, lazy, Suspense, memo } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useSearchParams } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -502,15 +502,20 @@ const ArticleModal = ({ article, open, onClose }) => {
               <ExternalLink className="w-4 h-4" />
               Voir l'article original
             </a>
-          </Button> 
-          <Button 
-  variant="outline" 
-  size="icon" 
-  onClick={handleCopyLink}
-  aria-label="Copier le lien"
->
-  <Copy className="w-4 h-4" />
-</Button>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              const link = `${window.location.origin}/?article=${article.id}`;
+              navigator.clipboard.writeText(link);
+              toast.success("Lien TechWatch copié !");
+            }}
+            aria-label="Copier le lien TechWatch"
+            title="Copier le lien de partage TechWatch"
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -829,6 +834,7 @@ const HomePage = () => {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     search: "",
     sector: "Tous",
@@ -842,6 +848,18 @@ const HomePage = () => {
     setFilters(f => ({ ...f, ticker: f.ticker === ticker ? "" : ticker }));
     setPage(1);
   };
+
+  // Ouvrir un article et mettre à jour l'URL
+  const handleOpenModal = (article) => {
+    setSelectedArticle(article);
+    if (article?.id) setSearchParams({ article: article.id });
+  };
+
+  // Fermer le modal et nettoyer l'URL
+  const handleCloseModal = () => {
+    setSelectedArticle(null);
+    setSearchParams({});
+  };
 const [displayTotal, setDisplayTotal] = useState(112);
 
 // Ajoute un autre useEffect pour mettre à jour displayTotal
@@ -850,6 +868,22 @@ useEffect(() => {
     setDisplayTotal(totalCount);
   }
 }, [totalCount]);
+
+  // Deep link : ouvrir automatiquement l'article si ?article=ID dans l'URL
+  useEffect(() => {
+    const articleId = searchParams.get('article');
+    if (!articleId) return;
+    // Si l'article est déjà dans la liste chargée
+    const found = articles.find(a => String(a.id) === articleId);
+    if (found) {
+      setSelectedArticle(found);
+      return;
+    }
+    // Sinon le charger directement depuis Supabase
+    fetchArticleById(articleId).then(a => {
+      if (a) setSelectedArticle(a);
+    });
+  }, [searchParams, articles]);
   const fetchArticles = async () => {
     setLoading(true);
     try {
@@ -919,7 +953,7 @@ useEffect(() => {
     >
       <ArticleCard
         article={article}
-        onOpenModal={setSelectedArticle}
+        onOpenModal={handleOpenModal}
         onTickerClick={handleTickerClick}
         activeTicker={filters.ticker}
       />
@@ -958,7 +992,7 @@ useEffect(() => {
       <ArticleModal
         article={selectedArticle}
         open={!!selectedArticle}
-        onClose={() => setSelectedArticle(null)}
+        onClose={handleCloseModal}
       />
     </div>
   );
