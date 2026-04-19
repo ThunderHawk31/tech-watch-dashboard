@@ -237,7 +237,11 @@ export async function fetchArticleById(id) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const rows = await response.json();
     if (!rows.length) return null;
-    return mapArticle(rows[0]);
+    const article = mapArticle(rows[0]);
+    article.actions = typeof article.actions === 'string'
+      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
+      : (Array.isArray(article.actions) ? article.actions : []);
+    return article;
   } catch (error) {
     console.error('fetchArticleById error:', error);
     return null;
