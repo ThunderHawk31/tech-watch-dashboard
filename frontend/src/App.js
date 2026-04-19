@@ -529,68 +529,39 @@ const FiltersBar = ({ filters, setFilters }) => {
     const timer = setTimeout(() => {
       setFilters(prev => ({ ...prev, search: searchInput }));
     }, 300);
-
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // ✅ Validation simple avec console.warn
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
-
-    // Valide immédiatement (feedback développeur)
     const { isValid, errors } = validateFilters(newFilters);
-
-    if (!isValid) {
-      console.warn('⚠️ Filtres invalides:', errors);
-    }
-
+    if (!isValid) console.warn('⚠️ Filtres invalides:', errors);
     setFilters(newFilters);
+  };
+
+  const toggleSector = (name) => {
+    const current = filters.sectors || [];
+    const next = current.includes(name)
+      ? current.filter(s => s !== name)
+      : [...current, name];
+    setFilters(prev => ({ ...prev, sectors: next }));
   };
 
   return (
     <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-4 mb-8 border border-border">
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher dans les articles..."
-            className="pl-10"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            aria-label="Rechercher dans les articles"
-          />
-        </div>
-        
-        <div className="flex flex-wrap gap-3">
-          <Select
-            value={filters.sector}
-            onValueChange={(value) => handleFilterChange('sector', value)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Secteur">
-                {filters.sector && filters.sector !== "Tous" && sectorConfig[filters.sector] ? (
-                  <span className="flex items-center gap-1.5">
-                    {(() => { const Icon = sectorConfig[filters.sector].icon; return <Icon className="w-3.5 h-3.5" style={{ color: sectorConfig[filters.sector].color }} />; })()}
-                    {filters.sector}
-                  </span>
-                ) : "Tous secteurs"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Tous">Tous secteurs</SelectItem>
-              {Object.entries(sectorConfig).map(([name, cfg]) => {
-                const Icon = cfg.icon;
-                return (
-                  <SelectItem key={name} value={name}>
-                    <span className="flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
-                      {name}
-                    </span>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher dans les articles..."
+              className="pl-10"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              aria-label="Rechercher dans les articles"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
 
           <Select
             value={filters.sentiment}
@@ -634,6 +605,38 @@ const FiltersBar = ({ filters, setFilters }) => {
               <SelectItem value="importance">Plus important</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        </div>
+
+        {/* Boutons toggle secteurs */}
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(sectorConfig).map(([name, cfg]) => {
+            const Icon = cfg.icon;
+            const active = (filters.sectors || []).includes(name);
+            return (
+              <button
+                key={name}
+                onClick={() => toggleSector(name)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all duration-150 ${
+                  active
+                    ? 'border-transparent text-white font-medium'
+                    : 'border-border bg-card/60 text-muted-foreground hover:text-foreground hover:border-border/80'
+                }`}
+                style={active ? { backgroundColor: cfg.color, borderColor: cfg.color } : {}}
+              >
+                <Icon className="w-3.5 h-3.5" style={active ? {} : { color: cfg.color }} />
+                {name}
+              </button>
+            );
+          })}
+          {(filters.sectors || []).length > 0 && (
+            <button
+              onClick={() => setFilters(prev => ({ ...prev, sectors: [] }))}
+              className="px-3 py-1.5 rounded-full text-sm border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Tout afficher
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -835,9 +838,18 @@ const HomePage = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Lire ?categories= au montage pour présélectionner plusieurs secteurs (usage portfolio)
+  const getInitialSectors = () => {
+    const cats = searchParams.get("categories");
+    if (!cats) return [];
+    const validSectors = Object.keys(sectorConfig);
+    return cats.split(",").map(s => s.trim()).filter(s => validSectors.includes(s));
+  };
+
   const [filters, setFilters] = useState({
     search: "",
-    sector: "Tous",
+    sectors: getInitialSectors(), // tableau — [] = tous les secteurs
     sentiment: "Tous",
     minImportance: "0",
     sort: "recent",
@@ -870,14 +882,15 @@ useEffect(() => {
 }, [totalCount]);
 
   // Deep link : ouvrir automatiquement l'article si ?article=ID dans l'URL
-  // Tourne une seule fois au montage — pas de dépendance sur articles pour éviter la race condition
+  // Se déclenche UNE SEULE FOIS au chargement initial
   useEffect(() => {
     const articleId = searchParams.get('article');
     if (!articleId) return;
+    // Fetch direct depuis Supabase — indépendant de la liste paginée
     fetchArticleById(articleId).then(a => {
       if (a) setSelectedArticle(a);
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const fetchArticles = async () => {
     setLoading(true);
     try {

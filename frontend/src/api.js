@@ -164,7 +164,11 @@ function filterAndPaginate(data, filters, page) {
     );
   }
   
-  if (filters.sector && filters.sector !== "Tous") {
+  // Multi-select secteurs : [] = tous, sinon filtrer sur la liste
+  if (filters.sectors && filters.sectors.length > 0) {
+    articles = articles.filter(article => filters.sectors.includes(article.secteur));
+  } else if (filters.sector && filters.sector !== "Tous") {
+    // Rétrocompatibilité avec l'ancien filtre unique
     articles = articles.filter(article => article.secteur === filters.sector);
   }
   
