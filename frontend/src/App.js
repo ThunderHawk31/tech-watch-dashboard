@@ -860,9 +860,9 @@ const HomePage = () => {
     setSelectedArticle(null);
     setSearchParams({});
   };
+
 const [displayTotal, setDisplayTotal] = useState(112);
 
-// Ajoute un autre useEffect pour mettre à jour displayTotal
 useEffect(() => {
   if (totalCount > 0) {
     setDisplayTotal(totalCount);
@@ -873,13 +873,12 @@ useEffect(() => {
   useEffect(() => {
     const articleId = searchParams.get('article');
     if (!articleId) return;
-    // Si l'article est déjà dans la liste chargée
     const found = articles.find(a => String(a.id) === articleId);
     if (found) {
       setSelectedArticle(found);
       return;
     }
-    // Sinon le charger directement depuis Supabase
+    // Pas encore dans la liste paginée → fetch direct Supabase
     fetchArticleById(articleId).then(a => {
       if (a) setSelectedArticle(a);
     });
@@ -1424,7 +1423,7 @@ const FavoritesPage = () => {
           >
             <ArticleCard
               article={article}
-              onOpenModal={setSelectedArticle}
+              onOpenModal={handleOpenModal}
             />
           </div>
         ))}

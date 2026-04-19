@@ -222,6 +222,7 @@ export async function fetchSectorHeat() {
   }
 }
 
+
 export async function fetchArticleById(id) {
   try {
     const response = await fetch(
@@ -238,11 +239,10 @@ export async function fetchArticleById(id) {
     if (!rows.length) return null;
     return mapArticle(rows[0]);
   } catch (error) {
-    console.error('❌ Erreur fetchArticleById:', error);
+    console.error('fetchArticleById error:', error);
     return null;
   }
 }
-
 
 export async function fetchStats() {
   try {
