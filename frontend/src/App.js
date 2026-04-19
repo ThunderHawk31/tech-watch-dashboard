@@ -870,19 +870,14 @@ useEffect(() => {
 }, [totalCount]);
 
   // Deep link : ouvrir automatiquement l'article si ?article=ID dans l'URL
+  // Tourne une seule fois au montage — pas de dépendance sur articles pour éviter la race condition
   useEffect(() => {
     const articleId = searchParams.get('article');
     if (!articleId) return;
-    const found = articles.find(a => String(a.id) === articleId);
-    if (found) {
-      setSelectedArticle(found);
-      return;
-    }
-    // Pas encore dans la liste paginée → fetch direct Supabase
     fetchArticleById(articleId).then(a => {
       if (a) setSelectedArticle(a);
     });
-  }, [searchParams, articles]);
+  }, []);
   const fetchArticles = async () => {
     setLoading(true);
     try {
