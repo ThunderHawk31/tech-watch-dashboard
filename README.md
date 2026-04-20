@@ -164,7 +164,6 @@ Frontend — les constantes Supabase sont dans `src/api.js` (clé anon publique)
 Backend — créer un fichier `.env` dans `/backend` :
 
 ```env
-MONGO_URL=your_mongodb_url
 DB_NAME=your_db_name
 JWT_SECRET_KEY=your_secret
 CORS_ORIGINS=https://techwatch.fr
