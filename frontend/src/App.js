@@ -947,7 +947,7 @@ useEffect(() => {
             ? `mise à jour il y a ${Math.floor(diff / 60)}h`
             : `mise à jour il y a ${Math.floor(diff / 1440)}j`;
           return (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
@@ -1102,7 +1102,7 @@ const AboutPage = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-2">Collecte automatique (n8n)</h3>
                 <p className="text-muted-foreground">
-                  Un workflow n8n s'exécute <strong>2 fois par jour</strong> (6h30 et 18h30) pour récupérer
+                  Un workflow n8n s'exécute <strong>2 fois par jour</strong> (10h30 et 18h30) pour récupérer
                   les flux RSS de sources de référence : TechCrunch, O'Reilly, The Hacker News, CoinDesk, HuggingFace, etc.
                 </p>
               </div>
