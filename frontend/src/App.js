@@ -938,6 +938,15 @@ useEffect(() => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+          Veille Technologique
+          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+            IA & Tech
+          </span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Analyses automatiques par IA — Mis à jour 2×/jour
+        </p>
         {articles.length > 0 && (() => {
           const last = new Date(articles[0].date);
           const diff = Math.floor((Date.now() - last.getTime()) / 60000);
@@ -947,7 +956,7 @@ useEffect(() => {
             ? `mise à jour il y a ${Math.floor(diff / 60)}h`
             : `mise à jour il y a ${Math.floor(diff / 1440)}j`;
           return (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
@@ -964,15 +973,6 @@ useEffect(() => {
             </div>
           );
         })()}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-          Veille Technologique
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-            IA & Tech
-          </span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Analyses automatiques par IA — Mis à jour 2×/jour
-        </p>
       </div>
 
       <StatsOverview stats={stats} />
