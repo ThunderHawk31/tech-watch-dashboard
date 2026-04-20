@@ -6,8 +6,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import ipaddress
 import os
 import logging
 from pathlib import Path
@@ -48,8 +48,20 @@ security = HTTPBearer()
 app = FastAPI(title="Tech Watch API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 
+def get_real_ip(request: Request) -> str:
+    """IP réelle en tenant compte du reverse proxy Railway."""
+    real_ip = request.headers.get("X-Real-IP", "").strip()
+    if real_ip:
+        try:
+            ipaddress.ip_address(real_ip)
+            return real_ip
+        except ValueError:
+            pass
+    # Fallback : IP directe (proxy Railway)
+    return request.client.host or "unknown"
+
 # H1: Rate limiting
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_real_ip)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -157,8 +169,11 @@ async def register(request: Request, user_data: UserCreate):
 async def login(request: Request, user_data: UserLogin):
     """Login with email and password"""
     user = await db.users.find_one({"email": user_data.email})
-    if not user or not verify_password(user_data.password, user["password"]):
-        await asyncio.sleep(0.5)  # délai anti-timing attack
+    # Hash factice : bcrypt tourne toujours même si l'email est inconnu (anti-timing)
+    DUMMY_HASH = "$2b$12$KIXSiJFas9MhFsp9QAvZD.IziZvGBZYFELNhGc4Tj3CfWxJwDXbHO"
+    stored_hash = user["password"] if user else DUMMY_HASH
+    password_ok = verify_password(user_data.password, stored_hash)
+    if not user or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -222,7 +237,8 @@ async def rss_feed():
         resp.raise_for_status()
         articles = resp.json()
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erreur Supabase : {e}")
+        logger.error(f"RSS feed error: {e}")
+        raise HTTPException(status_code=502, detail="Service temporairement indisponible")
 
     def ex(s):
         return (str(s or "").replace("&", "&amp;").replace("<", "&lt;")

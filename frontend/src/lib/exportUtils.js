@@ -25,8 +25,11 @@ export function exportToCSV(articles, filename = 'veille-tech') {
     // Fonction pour échapper les caractères spéciaux CSV
     const escapeCSV = (str) => {
       if (str === null || str === undefined) return '';
-      const stringified = String(str);
-      // Échapper les guillemets et entourer de guillemets si contient virgule/retour ligne
+      let stringified = String(str);
+      // Protection formula injection Excel/LibreOffice
+      if (/^[=+\-@\t\r]/.test(stringified)) {
+        stringified = "'" + stringified;
+      }
       if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
         return `"${stringified.replace(/"/g, '""')}"`;
       }
