@@ -11,9 +11,15 @@ export function useFavorites() {
     const saved = localStorage.getItem(FAVORITES_KEY);
     if (saved) {
       try {
-        setFavorites(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(
+            f => f && typeof f === 'object' && typeof f.url === 'string' && typeof f.titre === 'string'
+          );
+          setFavorites(valid);
+        }
       } catch (e) {
-        console.error('Erreur chargement favoris:', e);
+        localStorage.removeItem(FAVORITES_KEY);
         setFavorites([]);
       }
     }

@@ -1,7 +1,22 @@
 const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
+function escapeXml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export default async function handler(req, res) {
+  if (!SUPABASE_KEY) {
+    res.status(500).send('Server configuration error');
+    return;
+  }
+
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/techwatch_articles?select=title,published_at,url,analysis,sector&order=published_at.desc&limit=50`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
@@ -15,11 +30,11 @@ export default async function handler(req, res) {
   const articles = await r.json();
 
   const items = articles.map(a => {
-    const title = (a.title || 'Sans titre').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const link = a.url || '';
+    const title = escapeXml(a.title || 'Sans titre');
+    const link = escapeXml(a.url || '');
     const pubDate = a.published_at ? new Date(a.published_at).toUTCString() : '';
-    const description = (a.analysis || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const category = a.sector || '';
+    const description = escapeXml(a.analysis || '');
+    const category = escapeXml(a.sector || '');
     return `
     <item>
       <title>${title}</title>
