@@ -192,6 +192,8 @@ function filterAndPaginate(data, filters, page) {
     articles.sort((a, b) => new Date(b.date) - new Date(a.date));
   } else if (filters.sort === "importance") {
     articles.sort((a, b) => b.importance - a.importance);
+  } else if (filters.sort === "az") {
+    articles.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
   }
   
   // Pagination

@@ -278,7 +278,7 @@ const Footer = () => {
 
   return (
     <Card
-      className="group cursor-pointer bg-card hover:bg-card/80 transition-all duration-300 hover:-translate-y-1"
+      className={`group cursor-pointer bg-card hover:bg-card/80 transition-all duration-300 hover:-translate-y-1${article.importance >= 5 ? ' card-top' : ''}`}
       onClick={() => onOpenModal(article)}
     >
       <CardHeader className="pb-3">
@@ -564,6 +564,20 @@ const FiltersBar = ({ filters, setFilters }) => {
           <div className="flex flex-wrap gap-3">
 
           <Select
+            value={filters.sort}
+            onValueChange={(value) => handleFilterChange('sort', value)}
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Récent</SelectItem>
+              <SelectItem value="importance">Score</SelectItem>
+              <SelectItem value="az">A–Z</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
             value={filters.sentiment}
             onValueChange={(value) => handleFilterChange('sentiment', value)}
           >
@@ -590,19 +604,6 @@ const FiltersBar = ({ filters, setFilters }) => {
               <SelectItem value="3">3+ étoiles</SelectItem>
               <SelectItem value="4">4+ étoiles</SelectItem>
               <SelectItem value="5">5 étoiles</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.sort}
-            onValueChange={(value) => handleFilterChange('sort', value)}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Trier par" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">Plus récent</SelectItem>
-              <SelectItem value="importance">Plus important</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -937,6 +938,32 @@ useEffect(() => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
+        {articles.length > 0 && (() => {
+          const last = new Date(articles[0].date);
+          const diff = Math.floor((Date.now() - last.getTime()) / 60000);
+          const label = diff < 60
+            ? `mise à jour il y a ${diff} min`
+            : diff < 1440
+            ? `mise à jour il y a ${Math.floor(diff / 60)}h`
+            : `mise à jour il y a ${Math.floor(diff / 1440)}j`;
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
+                color: '#4ade80', background: 'rgba(74,222,128,0.1)',
+                border: '0.5px solid rgba(74,222,128,0.3)',
+                borderRadius: '99px', padding: '3px 11px'
+              }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#4ade80', animation: 'pulse 2s infinite'
+                }} />
+                EN DIRECT · {label}
+              </span>
+            </div>
+          );
+        })()}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
           Veille Technologique
           <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">

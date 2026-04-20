@@ -61,7 +61,7 @@ export const filtersSchema = Joi.object({
 
   // Tri (whitelist stricte)
   sort: Joi.string()
-    .valid('recent', 'importance')
+    .valid('recent', 'importance', 'az')
     .default('recent')
     .messages({
       'any.only': 'Tri invalide. Valeurs acceptées : recent, importance'
