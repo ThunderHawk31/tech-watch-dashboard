@@ -20,32 +20,44 @@ export const renderStars = (count) => {
 
 export const parseAnalysis = (analyse) => {
   if (!analyse) return {};
+
+  // Borner l'input pour éviter le ReDoS sur des analyses très longues
+  const safe = analyse.slice(0, 10000);
+
   const clean = (text) => text
     .replace(/#{1,6}\s*/g, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*([^*]{0,300})\*\*/g, '$1')
+    .replace(/\*([^*]{0,300})\*/g, '$1')
+    .replace(/\[([^\]]{0,200})\]\([^)]{0,500}\)/g, '$1')
     .replace(/[📰🏷️📊🔑💼⚡📈💹🌍]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
+  // Découper par sections (#) pour éviter [\s\S]*? sur input illimité
+  const sections = safe.split(/\n(?=#)/);
+
   const extract = (label) => {
-    const re = new RegExp(`${label}[^\\n#]*[\\n:]?([\\s\\S]*?)(?=\\s*#|$)`, 'i');
-    const m = analyse.match(re);
-    return m ? clean(m[1]) : null;
+    const target = sections.find(s =>
+      new RegExp(`^#*\\s*${label}`, 'i').test(s.trim())
+    );
+    if (!target) return null;
+    const body = target.replace(new RegExp(`^#*[^\\n]*${label}[^\\n]*\\n?`, 'i'), '');
+    return clean(body) || null;
   };
 
   const resume = extract('RÉSUMÉ EXÉCUTIF');
   const impact = extract('IMPACT');
   const opportunites = extract('OPPORTUNIT');
 
-  const pointsClesMatch = analyse.match(/POINTS? CLÉS?[^\n#]*[\n:]?([\s\S]*?)(?=\s*#|$)/i);
+  const pointsClesSection = sections.find(s => /^#*\s*POINTS? CLÉS?/i.test(s.trim()));
   let pointsCles = null;
-  if (pointsClesMatch) {
-    pointsCles = pointsClesMatch[1]
-      .split(/\n|(?<=\.)(?=\s*[-•*]|\s+\d+\.)/)
+  if (pointsClesSection) {
+    pointsCles = pointsClesSection
+      .split('\n')
+      .slice(1)
       .map(l => clean(l).replace(/^[-•*\d.]+\s*/, ''))
-      .filter(l => l.length > 5);
+      .filter(l => l.length > 5)
+      .slice(0, 20);
     if (pointsCles.length === 0) pointsCles = null;
   }
 

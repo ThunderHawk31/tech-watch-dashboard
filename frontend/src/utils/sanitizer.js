@@ -17,16 +17,12 @@ const DOMPURIFY_CONFIG = {
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'a', 'blockquote', 'code', 'pre', 'span'
   ],
-  ALLOWED_ATTR: {
-    'a': ['href', 'target', 'rel'],
-    'code': ['class'],
-    'span': ['class']
-  },
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur'],
-  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],  // tableau plat requis par DOMPurify
+  FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit'],
+  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style', 'form'],
   ALLOW_DATA_ATTR: false,
   ALLOW_UNKNOWN_PROTOCOLS: false,
-  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:)/i
 };
 
 // ============================================================
