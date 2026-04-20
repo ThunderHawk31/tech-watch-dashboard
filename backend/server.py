@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,9 +14,15 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import secrets
+import httpx
+import xml.etree.ElementTree as ET
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Supabase config (pour le flux RSS)
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://bdhggllidtuwtcygsupk.supabase.co')
+SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -177,6 +184,70 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 # async def notify_inactive_users():
 #     """Send push notification to inactive users (not seen in 7 days)"""
 #     pass
+
+# ============================================================
+# RSS FEED
+# ============================================================
+
+@app.get("/rss.xml", include_in_schema=False)
+async def rss_feed():
+    """Flux RSS public des 50 derniers articles TechWatch"""
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{SUPABASE_URL}/rest/v1/techwatch_articles"
+                "?select=title,published_at,url,analysis,sector,importance,sentiment"
+                "&order=published_at.desc&limit=50",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {SUPABASE_ANON_KEY}"
+                },
+                timeout=10.0
+            )
+        resp.raise_for_status()
+        articles = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Supabase : {e}")
+
+    # Construction du XML RSS 2.0
+    items_xml = ""
+    for a in articles:
+        try:
+            pub_date = datetime.fromisoformat(
+                a["published_at"].replace("Z", "+00:00")
+            ).strftime("%a, %d %b %Y %H:%M:%S +0000")
+        except Exception:
+            pub_date = ""
+
+        title = (a.get("title") or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        desc  = (a.get("analysis") or "")[:300].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        url   = a.get("url") or ""
+        sector = a.get("sector") or ""
+
+        items_xml += f"""
+    <item>
+      <title>{title}</title>
+      <link>{url}</link>
+      <guid isPermaLink="true">{url}</guid>
+      <description>{desc}</description>
+      <pubDate>{pub_date}</pubDate>
+      <category>{sector}</category>
+    </item>"""
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>TechWatch — Veille IA &amp; Tech</title>
+    <link>https://techwatch.fr</link>
+    <description>Veille technologique automatisée — IA, Crypto, Cybersécurité, Marchés</description>
+    <language>fr</language>
+    <atom:link href="https://api.techwatch.fr/rss.xml" rel="self" type="application/rss+xml"/>
+    {items_xml}
+  </channel>
+</rss>"""
+
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
+
 
 # ============================================================
 # ROOT ENDPOINT
