@@ -1,21 +1,24 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Optional
 import uuid
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-import secrets
+import asyncio
 import httpx
-import xml.etree.ElementTree as ET
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -29,8 +32,12 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# JWT Configuration
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', secrets.token_hex(32))
+# JWT Configuration — H3: fail hard if secret missing
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY est obligatoire. Générez-en un avec: python -c \"import secrets; print(secrets.token_hex(64))\"")
+if len(SECRET_KEY) < 32:
+    raise RuntimeError("JWT_SECRET_KEY doit faire au moins 32 caractères (64 recommandés)")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
@@ -41,22 +48,27 @@ security = HTTPBearer()
 app = FastAPI(title="Tech Watch API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 
+# H1: Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # ============================================================
 # MODELS
 # ============================================================
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     name: str
 
 class UserCreate(BaseModel):
-    email: str
-    password: str
-    name: str
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=72)  # 72 = limite bcrypt
+    name: str = Field(min_length=1, max_length=100, strip_whitespace=True)
 
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(max_length=72)  # bloquer les payloads DoS bcrypt
 
 class User(UserBase):
     model_config = ConfigDict(extra="ignore")
@@ -113,7 +125,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 # ============================================================
 
 @api_router.post("/auth/register", response_model=Token)
-async def register(user_data: UserCreate):
+@limiter.limit("3/hour")
+async def register(request: Request, user_data: UserCreate):
     """Register a new user"""
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
@@ -140,10 +153,12 @@ async def register(user_data: UserCreate):
     )
 
 @api_router.post("/auth/login", response_model=Token)
-async def login(user_data: UserLogin):
+@limiter.limit("5/minute")
+async def login(request: Request, user_data: UserLogin):
     """Login with email and password"""
     user = await db.users.find_one({"email": user_data.email})
     if not user or not verify_password(user_data.password, user["password"]):
+        await asyncio.sleep(0.5)  # délai anti-timing attack
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -209,6 +224,10 @@ async def rss_feed():
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur Supabase : {e}")
 
+    def ex(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;"))
+
     # Construction du XML RSS 2.0
     items_xml = ""
     for a in articles:
@@ -219,10 +238,10 @@ async def rss_feed():
         except Exception:
             pub_date = ""
 
-        title = (a.get("title") or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        desc  = (a.get("analysis") or "")[:300].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        url   = a.get("url") or ""
-        sector = a.get("sector") or ""
+        title  = ex(a.get("title") or "")
+        desc   = ex((a.get("analysis") or "")[:300])
+        url    = ex(a.get("url") or "")
+        sector = ex(a.get("sector") or "")
 
         items_xml += f"""
     <item>
@@ -255,15 +274,7 @@ async def rss_feed():
 
 @api_router.get("/")
 async def root():
-    """API root endpoint"""
-    return {
-        "message": "Tech Watch API",
-        "version": "1.0.0",
-        "features": {
-            "auth": "JWT authentication (bcrypt + MongoDB)",
-            "push_notifications": "TODO - Not implemented yet"
-        }
-    }
+    return {"status": "ok"}
 
 # ============================================================
 # APP CONFIGURATION
@@ -271,12 +282,33 @@ async def root():
 
 app.include_router(api_router)
 
+# M3: Security headers
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# H2: CORS — fail hard si non configuré en production
+_cors_raw = os.environ.get('CORS_ORIGINS', '').strip()
+if not _cors_raw or _cors_raw == '*':
+    if os.environ.get('ENV', 'production') != 'development':
+        raise RuntimeError("CORS_ORIGINS est obligatoire en production (ex: https://techwatch.fr)")
+    _cors_origins = ['http://localhost:3000']
+else:
+    _cors_origins = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 logging.basicConfig(

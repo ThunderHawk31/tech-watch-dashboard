@@ -230,9 +230,14 @@ export async function fetchSectorHeat() {
 
 
 export async function fetchArticleById(id) {
+  if (!id || typeof id !== 'string') return null;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const INT_RE = /^\d{1,20}$/;
+  if (!UUID_RE.test(id) && !INT_RE.test(id)) return null;
+
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?article_id=eq.${id}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&limit=1`,
+      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&limit=1`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
