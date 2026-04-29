@@ -88,6 +88,9 @@ UI_MOBILE_EXTRACTED/
 SECURITE_NIVEAU_1/
 *-BACKUP/
 
+# Graphify output
+graphify-out/
+
 # Build caches
 .cache/
 

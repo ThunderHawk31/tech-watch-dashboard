@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co/rest/v1/techwatch_articles';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaGdnbGxpZHR1d3RjeWdzdXBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4OTg4MDUsImV4cCI6MjA4ODQ3NDgwNX0.ou14ziQMriVW3X9xKchH4wJ8YfKWWh_vQkXy6O3hgSI';
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 export async function fetchArticles(filters = {}, page = 1) {
   try {
@@ -23,13 +23,14 @@ export async function fetchArticles(filters = {}, page = 1) {
     let articles = rows.map(row => ({
       id: row.article_id,
       titre: row.title || '',
-      date: row.published_at,
+      titre_en: row.title_en || '',
+      date: row.published_at || new Date().toISOString(),
       url: row.url || '',
       analyse: row.analysis || '',
       importance: row.importance || 0,
       sentiment: row.sentiment || 'Neutre',
       actions: typeof row.tickers === 'string'
-        ? row.tickers.split(',').map(a => a.trim()).filter(a => a)
+        ? row.tickers.split(',').map(a => a.trim()).filter(a => a && a !== 'AUCUN')
         : [],
       secteur: row.sector || 'Autre',
       tokens: row.tokens || 0

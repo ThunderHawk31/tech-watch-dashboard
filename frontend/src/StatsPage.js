@@ -7,16 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Skeleton } from "./components/ui/skeleton";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const sectorConfig = {
-  "IA": { color: "#8B5CF6" },
-  "Tech": { color: "#3B82F6" },
-  "Finance": { color: "#10B981" },
-  "Crypto": { color: "#F59E0B" },
-  "Énergie": { color: "#EAB308" },
-  "Santé": { color: "#EC4899" },
-  "Cybersécurité": { color: "#EF4444" },
-  "Autre": { color: "#6B7280" },
-};
+import { sectorConfig as sectorConfigFull } from './lib/config';
+const sectorConfig = Object.fromEntries(
+  Object.entries(sectorConfigFull).map(([k, v]) => [k, { color: v.color }])
+);
 
 const StatsPage = () => {
   const [stats, setStats] = useState(null);

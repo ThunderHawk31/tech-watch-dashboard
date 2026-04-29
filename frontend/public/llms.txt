@@ -1,0 +1,37 @@
+# TechWatch
+
+> Plateforme française de veille technologique automatisée par IA.
+> Analyses générées par Claude API (Anthropic) depuis des flux RSS de référence.
+> Mise à jour 2 fois par jour via n8n (6h30 et 18h30).
+
+## À propos
+
+TechWatch est un projet personnel développé par un étudiant en BTS SIO SISR.
+Il agrège et analyse automatiquement les actualités tech des secteurs IA, Cybersécurité,
+Finance, Crypto, Énergie et Santé.
+
+## Accès au contenu
+
+- Dashboard : https://techwatch.fr
+- Flux RSS : https://techwatch-production.up.railway.app/rss.xml
+- Articles individuels : https://techwatch.fr/article/{id}
+
+## Sources agrégées
+
+TechCrunch, BleepingComputer, CoinDesk, HuggingFace Blog, O'Reilly, The Hacker News
+
+## Secteurs couverts
+
+IA, Tech, Finance, Crypto, Énergie, Santé, Cybersécurité
+
+## Stack technique
+
+Frontend : React + Vite, déployé sur Vercel
+Backend : FastAPI, déployé sur Railway
+Base de données : Supabase (PostgreSQL)
+Automatisation : n8n Cloud
+Analyse : Claude API (Anthropic)
+
+## Contact
+
+GitHub : https://github.com/nolan

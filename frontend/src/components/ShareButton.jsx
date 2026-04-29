@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Share2, Link2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Share2, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 
@@ -26,9 +26,11 @@ Via Tech Watch - Veille IA & Tech automatisée`;
     return text;
   };
 
-  // Générer l'URL de partage
+  // Générer l'URL de partage — lien direct vers l'article sur TechWatch
   const getShareUrl = () => {
-    // Toujours partager l'URL de mon site
+    if (article?.id) {
+      return `${window.location.origin}/?article=${article.id}`;
+    }
     return window.location.origin;
   };
 
@@ -188,7 +190,7 @@ export const ShareButtonCompact = ({ article }) => {
 export const useWebShareSupport = () => {
   const [isSupported, setIsSupported] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     setIsSupported('share' in navigator);
   }, []);
 

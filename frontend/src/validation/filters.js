@@ -23,13 +23,18 @@ export const filtersSchema = Joi.object({
       'string.base': 'La recherche doit être du texte'
     }),
 
-  // Secteur (whitelist stricte)
+  // Secteur unique (rétrocompatibilité)
   sector: Joi.string()
     .valid('Tous', 'IA', 'Tech', 'Finance', 'Crypto', 'Énergie', 'Santé', 'Cybersécurité','Autre')
     .default('Tous')
     .messages({
       'any.only': 'Secteur invalide. Valeurs acceptées : Tous, IA, Tech, Finance, Crypto, Énergie, Santé, Cybersécurité, Autre'
     }),
+
+  // Multi-secteurs (nouveau filtre)
+  sectors: Joi.array()
+    .items(Joi.string().valid('IA', 'Tech', 'Finance', 'Crypto', 'Énergie', 'Santé', 'Cybersécurité', 'Autre'))
+    .default([]),
 
   // Sentiment (whitelist stricte)
   sentiment: Joi.string()
@@ -56,7 +61,7 @@ export const filtersSchema = Joi.object({
 
   // Tri (whitelist stricte)
   sort: Joi.string()
-    .valid('recent', 'importance')
+    .valid('recent', 'importance', 'az')
     .default('recent')
     .messages({
       'any.only': 'Tri invalide. Valeurs acceptées : recent, importance'

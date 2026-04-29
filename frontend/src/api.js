@@ -164,7 +164,11 @@ function filterAndPaginate(data, filters, page) {
     );
   }
   
-  if (filters.sector && filters.sector !== "Tous") {
+  // Multi-select secteurs : [] = tous, sinon filtrer sur la liste
+  if (filters.sectors && filters.sectors.length > 0) {
+    articles = articles.filter(article => filters.sectors.includes(article.secteur));
+  } else if (filters.sector && filters.sector !== "Tous") {
+    // Rétrocompatibilité avec l'ancien filtre unique
     articles = articles.filter(article => article.secteur === filters.sector);
   }
   
@@ -188,6 +192,8 @@ function filterAndPaginate(data, filters, page) {
     articles.sort((a, b) => new Date(b.date) - new Date(a.date));
   } else if (filters.sort === "importance") {
     articles.sort((a, b) => b.importance - a.importance);
+  } else if (filters.sort === "az") {
+    articles.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
   }
   
   // Pagination
@@ -219,6 +225,37 @@ export async function fetchSectorHeat() {
   } catch (error) {
     console.error('❌ Erreur sector_heat:', error);
     return [];
+  }
+}
+
+
+export async function fetchArticleById(id) {
+  if (!id || typeof id !== 'string') return null;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const INT_RE = /^\d{1,20}$/;
+  if (!UUID_RE.test(id) && !INT_RE.test(id)) return null;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    if (!rows.length) return null;
+    const article = mapArticle(rows[0]);
+    article.actions = typeof article.actions === 'string'
+      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
+      : (Array.isArray(article.actions) ? article.actions : []);
+    return article;
+  } catch (error) {
+    console.error('fetchArticleById error:', error);
+    return null;
   }
 }
 
