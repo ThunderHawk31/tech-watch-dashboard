@@ -18,11 +18,17 @@ export const renderStars = (count) => {
   ));
 };
 
+const normalizeForParsing = (text) => {
+  if (!text) return '';
+  let t = text.replace(/\\n/g, '\n').replace(/\\r/g, '').replace(/\r\n/g, '\n');
+  if ((t.match(/\n/g) || []).length < 3) t = t.replace(/ # /g, '\n# ');
+  return t;
+};
+
 export const parseAnalysis = (analyse) => {
   if (!analyse) return {};
 
-  // Borner l'input pour éviter le ReDoS sur des analyses très longues
-  const safe = analyse.slice(0, 10000);
+  const safe = normalizeForParsing(analyse).slice(0, 10000);
 
   const clean = (text) => text
     .replace(/#{1,6}\s*/g, '')
@@ -37,11 +43,12 @@ export const parseAnalysis = (analyse) => {
   const sections = safe.split(/\n(?=#)/);
 
   const extract = (label) => {
-    const target = sections.find(s =>
-      new RegExp(`^#*\\s*${label}`, 'i').test(s.trim())
-    );
+    const target = sections.find(s => new RegExp(label, 'i').test(s));
     if (!target) return null;
-    const body = target.replace(new RegExp(`^#*[^\\n]*${label}[^\\n]*\\n?`, 'i'), '');
+    const m = target.match(new RegExp(`${label}[:\\s]*`, 'i'));
+    if (!m) return null;
+    const body = target.slice(m.index + m[0].length).split('\n')[0].trim()
+      || target.slice(m.index + m[0].length).trim();
     return clean(body) || null;
   };
 
@@ -49,12 +56,15 @@ export const parseAnalysis = (analyse) => {
   const impact = extract('IMPACT');
   const opportunites = extract('OPPORTUNIT');
 
-  const pointsClesSection = sections.find(s => /^#*\s*POINTS? CLÉS?/i.test(s.trim()));
+  const pointsClesSection = sections.find(s => /POINTS? CLÉS?/i.test(s));
   let pointsCles = null;
   if (pointsClesSection) {
-    pointsCles = pointsClesSection
-      .split('\n')
-      .slice(1)
+    const m = pointsClesSection.match(/POINTS? CLÉS?[:\s]*/i);
+    const body = m ? pointsClesSection.slice(m.index + m[0].length) : '';
+    const items = body.includes('\n')
+      ? body.split('\n')
+      : body.split(/ - (?=[A-ZÀÂÉÈÊÎÏÔÙÛÜ])/);
+    pointsCles = items
       .map(l => clean(l).replace(/^[-•*\d.]+\s*/, ''))
       .filter(l => l.length > 5)
       .slice(0, 20);

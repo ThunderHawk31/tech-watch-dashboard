@@ -56,11 +56,9 @@ export const InstallPrompt = () => {
       console.log('✅ App installée !');
       setIsInstalled(true);
       setShowPrompt(false);
-      if (window.toast) {
-        window.toast.success('✅ App installée avec succès !', {
-          description: 'Tech Watch est maintenant sur votre appareil'
-        });
-      }
+      toast.success('✅ App installée avec succès !', {
+        description: 'Tech Watch est maintenant sur votre appareil'
+      });
     };
     
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -180,21 +178,17 @@ export const OfflineIndicator = () => {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (window.toast) {
-        window.toast.success('🌐 Connexion rétablie !', {
-          description: 'Vous êtes de nouveau en ligne'
-        });
-      }
+      toast.success('🌐 Connexion rétablie !', {
+        description: 'Vous êtes de nouveau en ligne'
+      });
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      if (window.toast) {
-        window.toast.warning('📵 Mode hors ligne', {
-          description: 'Vous naviguez avec le contenu en cache',
-          duration: 5000
-        });
-      }
+      toast.warning('📵 Mode hors ligne', {
+        description: 'Vous naviguez avec le contenu en cache',
+        duration: 5000
+      });
     };
 
     window.addEventListener('online', handleOnline);

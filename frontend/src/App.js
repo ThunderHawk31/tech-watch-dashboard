@@ -1,8 +1,7 @@
-import { useEffect, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
-import { toast } from "sonner";
 import { OfflineIndicator } from './components/InstallPrompt';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { InstallPWA } from './components/InstallPWA';
@@ -20,9 +19,6 @@ import TendancesPage from './pages/TendancesPage';
 const StatsPage = lazy(() => import('./StatsPage'));
 
 function App() {
-  useEffect(() => {
-    window.toast = toast;
-  }, []);
 
   return (
     <div className="App min-h-screen flex flex-col">

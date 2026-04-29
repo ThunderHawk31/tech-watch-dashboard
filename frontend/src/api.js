@@ -1,8 +1,8 @@
 import { validateFilters, sanitizeSearch } from './validation/filters';
 
 // ✅ Supabase REST API (remplace n8n/Google Sheets)
-const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co/rest/v1/techwatch_articles';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkaGdnbGxpZHR1d3RjeWdzdXBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4OTg4MDUsImV4cCI6MjA4ODQ3NDgwNX0.ou14ziQMriVW3X9xKchH4wJ8YfKWWh_vQkXy6O3hgSI';
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CACHE_KEY = 'tech_watch_cache';

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Share2, Link2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Share2, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 
@@ -190,7 +190,7 @@ export const ShareButtonCompact = ({ article }) => {
 export const useWebShareSupport = () => {
   const [isSupported, setIsSupported] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     setIsSupported('share' in navigator);
   }, []);
 

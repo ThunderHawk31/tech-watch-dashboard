@@ -42,8 +42,10 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
 
   const getArticlePreview = (analyse, maxChars = 200) => {
     if (!analyse) return '';
-    const match = analyse.match(/RÉSUMÉ EXÉCUTIF[^\n]*\n([\s\S]*?)(?=\n#\s|\n📰|\n🏷️|\n📊|\n🔑|\n💼|\n⚡|\n📈|\n💹|$)/i);
-    const raw = match ? match[1] : analyse;
+    let normalized = analyse.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+    if ((normalized.match(/\n/g) || []).length < 3) normalized = normalized.replace(/ # /g, '\n# ');
+    const m = normalized.match(/RÉSUMÉ EXÉCUTIF[:\s]*([\s\S]*?)(?=\n#|$)/i);
+    const raw = m ? m[1].split('\n')[0].trim() || m[1].trim() : normalized;
     const cleaned = raw
       .replace(/#{1,6}\s*/g, '')
       .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
