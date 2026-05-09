@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 
-const WEBHOOK_URL =
-  'https://thunderhawk.app.n8n.cloud/webhook/5e4c965c-6c3a-473e-aad0-119e47ec845c/chat';
+const WEBHOOK_URL = '/api/chat';
 
 const INITIAL_MESSAGE = {
   id: 'init',
