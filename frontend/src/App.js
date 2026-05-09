@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import FavoritesPage from './pages/FavoritesPage';
 import TendancesPage from './pages/TendancesPage';
+import ChatWidget from './components/ChatWidget';
 
 const StatsPage = lazy(() => import('./StatsPage'));
 
@@ -66,6 +67,7 @@ function AppWrapper() {
             <InstallPWA />
             <App />
             <Toaster position="top-right" richColors />
+            <ChatWidget />
           </FavoritesProvider>
         </LangProvider>
       </ThemeProvider>
