@@ -31,6 +31,25 @@ const normalizeForParsing = (text) => {
 export const parseAnalysis = (analyse) => {
   if (!analyse) return {};
 
+  if (analyse.trimStart().startsWith('{')) {
+    try {
+      const j = JSON.parse(analyse);
+      const toArray = (v) => {
+        if (Array.isArray(v)) return v.filter(s => typeof s === 'string' && s.trim().length > 0);
+        if (typeof v === 'string' && v.trim()) return v.split('\n').map(s => s.replace(/^[-•*]\s*/, '').trim()).filter(s => s.length > 0);
+        return null;
+      };
+      return {
+        resume: j.resume || null,
+        pointsCles: toArray(j.points_cles),
+        impact: j.impact_marches || null,
+        opportunites: j.opportunites || null,
+      };
+    } catch {
+      return {};
+    }
+  }
+
   const safe = normalizeForParsing(analyse).slice(0, 10000);
 
   const clean = (text) => text
