@@ -55,9 +55,15 @@ export const parseAnalysis = (analyse) => {
     return clean(body) || null;
   };
 
+  const extractSection = (keyword) => {
+    const regex = new RegExp(`#[^\\n]*${keyword}[^\\n]*\\n([\\s\\S]*?)(?=\\n#|$)`, 'i');
+    const match = safe.match(regex);
+    return match ? clean(match[1].trim()) || null : null;
+  };
+
   const resume = extract('RÉSUMÉ EXÉCUTIF');
-  const impact = extract('IMPACT');
-  const opportunites = extract('OPPORTUNIT');
+  const impact = extractSection('IMPACT');
+  const opportunites = extractSection('OPPORTUNIT');
 
   const pointsClesSection = sections.find(s => /POINTS? CLÉS?/i.test(s));
   let pointsCles = null;
