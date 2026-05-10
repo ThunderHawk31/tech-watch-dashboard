@@ -17,7 +17,8 @@ import FavoritesPage from './pages/FavoritesPage';
 import TendancesPage from './pages/TendancesPage';
 import ChatWidget from './components/ChatWidget';
 
-const StatsPage = lazy(() => import('./StatsPage'));
+const StatsPage      = lazy(() => import('./StatsPage'));
+const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
 
 function App() {
 
@@ -49,6 +50,25 @@ function App() {
           <Route path="/tendances" element={<TendancesPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route
+            path="/monitoring"
+            element={
+              <Suspense fallback={
+                <div className="container mx-auto px-4 py-8">
+                  <div className="animate-pulse space-y-6">
+                    <div className="h-8 w-48 bg-gray-700 rounded" />
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="h-40 bg-gray-700 rounded-xl" />
+                      <div className="h-40 bg-gray-700 rounded-xl" />
+                    </div>
+                    <div className="h-64 bg-gray-700 rounded-xl" />
+                  </div>
+                </div>
+              }>
+                <MonitoringPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
       <Footer />

@@ -94,6 +94,14 @@ export const HeaderNew = () => {
               >
                 À propos
               </Link>
+              <Link
+                to="/monitoring"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/monitoring') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                Monitoring
+              </Link>
             </nav>
 
             {/* Actions - Desktop: boutons classiques, Mobile: badge favoris uniquement */}

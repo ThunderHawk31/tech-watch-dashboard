@@ -5,7 +5,7 @@ import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import {
   Home, Bookmark, BarChart3, Info,
-  Sun, Moon, Zap, Sparkles, TrendingUp
+  Sun, Moon, Zap, Sparkles, TrendingUp, Activity
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFavorites } from "../contexts/FavoritesContext";
@@ -46,6 +46,12 @@ export const NavigationMenu = ({ isOpen, setIsOpen }) => {
       label: "À propos",
       icon: Info,
       description: "En savoir plus"
+    },
+    {
+      path: "/monitoring",
+      label: "Monitoring",
+      icon: Activity,
+      description: "Santé des flux RSS"
     },
   ];
 
