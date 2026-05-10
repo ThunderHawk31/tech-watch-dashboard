@@ -85,19 +85,37 @@ export function exportToCSV(articles, filename = 'veille-tech') {
 
 // Fonction helper pour nettoyer l'analyse
 function cleanAnalyseForExport(analyse) {
+  if (analyse.trimStart().startsWith('{')) {
+    try {
+      const j = JSON.parse(analyse);
+      const parts = [
+        j.resume,
+        Array.isArray(j.points_cles) ? j.points_cles.join(' - ') : j.points_cles,
+        j.impact_marches,
+        j.opportunites,
+      ].filter(Boolean);
+      return parts.join(' ').trim().substring(0, 500);
+    } catch { /* fall through */ }
+  }
   return analyse
-    .replace(/[#*`📰🏷️📊🔑💼⚡📈💹]/g, '') // Enlever emojis et markdown
-    .replace(/\n+/g, ' ') // Remplacer retours ligne par espaces
+    .replace(/[#*`📰🏷️📊🔑💼⚡📈💹]/g, '')
+    .replace(/\n+/g, ' ')
     .trim()
-    .substring(0, 500); // Limiter à 500 caractères pour Excel
+    .substring(0, 500);
 }
 
 // Fonction helper pour extraire titre
 function extractTitleFromAnalyse(analyse) {
   if (!analyse) return '';
+  if (analyse.trimStart().startsWith('{')) {
+    try {
+      const j = JSON.parse(analyse);
+      const text = (j.titre || (j.resume || '').split('\n')[0]).trim();
+      return text.length > 80 ? text.substring(0, 77) + '...' : text;
+    } catch { /* fall through */ }
+  }
   const cleaned = analyse.replace(/[#*`📰🏷️📊🔑💼⚡📈💹]/g, '').trim();
   const lines = cleaned.split('\n').filter(line => line.trim().length > 0);
-  
   for (const line of lines) {
     if (line.length > 20 && !line.match(/^(TITRE|SECTEUR|RÉSUMÉ|POINTS|IMPACT)/i)) {
       return line.length > 80 ? line.substring(0, 77) + '...' : line;

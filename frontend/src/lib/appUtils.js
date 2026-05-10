@@ -31,23 +31,23 @@ const normalizeForParsing = (text) => {
 export const parseAnalysis = (analyse) => {
   if (!analyse) return {};
 
+  const toArray = (v) => {
+    if (Array.isArray(v)) return v.filter(s => typeof s === 'string' && s.trim().length > 0);
+    if (typeof v === 'string' && v.trim()) return v.split('\n').map(s => s.replace(/^[-•*]\s*/, '').trim()).filter(s => s.length > 0);
+    return null;
+  };
+
+  let jsonFields = null;
   if (analyse.trimStart().startsWith('{')) {
     try {
       const j = JSON.parse(analyse);
-      const toArray = (v) => {
-        if (Array.isArray(v)) return v.filter(s => typeof s === 'string' && s.trim().length > 0);
-        if (typeof v === 'string' && v.trim()) return v.split('\n').map(s => s.replace(/^[-•*]\s*/, '').trim()).filter(s => s.length > 0);
-        return null;
-      };
-      return {
+      jsonFields = {
         resume: j.resume || null,
         pointsCles: toArray(j.points_cles),
         impact: j.impact_marches || null,
         opportunites: j.opportunites || null,
       };
-    } catch {
-      return {};
-    }
+    } catch { /* fall through to markdown */ }
   }
 
   const safe = normalizeForParsing(analyse).slice(0, 10000);
@@ -63,7 +63,6 @@ export const parseAnalysis = (analyse) => {
 
   const sections = safe.split(/\n(?=#)/);
 
-  // Extrait le contenu après le label, qu'il soit inline ou sur la ligne suivante
   const extract = (label) => {
     const target = sections.find(s => new RegExp(label, 'i').test(s));
     if (!target) return null;
@@ -80,24 +79,33 @@ export const parseAnalysis = (analyse) => {
     return match ? clean(match[1].trim()) || null : null;
   };
 
-  const resume = extract('RÉSUMÉ EXÉCUTIF');
-  const impact = extractSection('IMPACT');
-  const opportunites = extractSection('OPPORTUNIT');
+  const mdResume = extract('RÉSUMÉ EXÉCUTIF');
+  const mdImpact = extractSection('IMPACT');
+  const mdOpportunites = extractSection('OPPORTUNIT');
 
   const pointsClesSection = sections.find(s => /POINTS? CLÉS?/i.test(s));
-  let pointsCles = null;
+  let mdPointsCles = null;
   if (pointsClesSection) {
     const m = pointsClesSection.match(/POINTS? CLÉS?[:\s]*/i);
     const body = m ? pointsClesSection.slice(m.index + m[0].length) : '';
     const items = body.includes('\n')
       ? body.split('\n')
       : body.split(/ - (?=[A-ZÀÂÉÈÊÎÏÔÙÛÜ])/);
-    pointsCles = items
+    mdPointsCles = items
       .map(l => clean(l).replace(/^[-•*\d.]+\s*/, ''))
       .filter(l => l.length > 5)
       .slice(0, 20);
-    if (pointsCles.length === 0) pointsCles = null;
+    if (mdPointsCles.length === 0) mdPointsCles = null;
   }
 
-  return { resume, pointsCles, impact, opportunites };
+  if (jsonFields) {
+    return {
+      resume: jsonFields.resume ?? mdResume,
+      pointsCles: jsonFields.pointsCles ?? mdPointsCles,
+      impact: jsonFields.impact ?? mdImpact,
+      opportunites: jsonFields.opportunites ?? mdOpportunites,
+    };
+  }
+
+  return { resume: mdResume, pointsCles: mdPointsCles, impact: mdImpact, opportunites: mdOpportunites };
 };

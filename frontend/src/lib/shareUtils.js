@@ -5,7 +5,15 @@
  */
 export const extractTitle = (analyse) => {
   if (!analyse) return 'Article Tech Watch';
-  
+
+  if (analyse.trimStart().startsWith('{')) {
+    try {
+      const j = JSON.parse(analyse);
+      const text = (j.resume || '').split('\n')[0].trim();
+      if (text) return text.length > 80 ? text.substring(0, 77) + '...' : text;
+    } catch { /* fall through */ }
+  }
+
   // Chercher le titre dans le markdown (# Titre)
   const titleMatch = analyse.match(/#{1,3}\s*(.+)/);
   if (titleMatch) {
@@ -27,7 +35,15 @@ export const extractTitle = (analyse) => {
  */
 export const generateSummary = (analyse, maxLength = 200) => {
   if (!analyse) return '';
-  
+
+  if (analyse.trimStart().startsWith('{')) {
+    try {
+      const j = JSON.parse(analyse);
+      const text = (j.resume || '').trim();
+      return text.length <= maxLength ? text : text.substring(0, maxLength - 3) + '...';
+    } catch { /* fall through */ }
+  }
+
   // Nettoyer le markdown et les emojis
   const cleaned = analyse
     .replace(/[#*`📰🏷️📊🔑💼⚡📈💹]/g, '')

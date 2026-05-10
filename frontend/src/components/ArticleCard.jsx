@@ -29,6 +29,13 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
       return article.titre.replace(/^\(/, '').replace(/\)$/, '').trim();
     }
     if (article.analyse) {
+      if (article.analyse.trimStart().startsWith('{')) {
+        try {
+          const j = JSON.parse(article.analyse);
+          const text = (j.titre || (j.resume || '').split('\n')[0]).trim();
+          if (text.length > 5) return text.length > 80 ? text.substring(0, 77) + '...' : text;
+        } catch { /* fall through */ }
+      }
       const cleaned = article.analyse.replace(/[#*`📰🏷️📊🔑💼⚡📈💹]/g, '').trim();
       const lines = cleaned.split('\n').filter(line => line.trim().length > 0);
       for (const line of lines) {
@@ -42,6 +49,18 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
 
   const getArticlePreview = (analyse, maxChars = 200) => {
     if (!analyse) return '';
+    if (analyse.trimStart().startsWith('{')) {
+      try {
+        const j = JSON.parse(analyse);
+        const text = (j.resume || '').trim();
+        if (text) {
+          if (text.length <= maxChars) return text;
+          const lastDot = text.lastIndexOf('.', maxChars);
+          if (lastDot >= maxChars * 0.5) return text.substring(0, lastDot + 1);
+          return text.substring(0, maxChars) + '…';
+        }
+      } catch { /* fall through */ }
+    }
     let normalized = analyse.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     if ((normalized.match(/\n/g) || []).length < 3) normalized = normalized.replace(/ # /g, '\n# ');
     const m = normalized.match(/RÉSUMÉ EXÉCUTIF[:\s]*([\s\S]*?)(?=\n#|$)/i);

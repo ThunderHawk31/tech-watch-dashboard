@@ -8,9 +8,16 @@ export const ShareButton = ({ article, variant = 'default', size = 'sm', showTex
 
   // Formater le texte de partage
   const formatShareText = () => {
-    // Extraire le titre de l'analyse
-    const titleMatch = article.analyse?.match(/#{1,3}\s*(.+)/);
-    const title = titleMatch ? titleMatch[1].trim() : 'Article intéressant';
+    let title = 'Article intéressant';
+    if (article.analyse?.trimStart().startsWith('{')) {
+      try {
+        const j = JSON.parse(article.analyse);
+        title = (j.resume || '').split('\n')[0].trim() || article.titre || title;
+      } catch { /* fall through */ }
+    } else {
+      const titleMatch = article.analyse?.match(/#{1,3}\s*(.+)/);
+      if (titleMatch) title = titleMatch[1].trim();
+    }
     
     // Créer le texte de partage
     const text = `📰 ${title}
