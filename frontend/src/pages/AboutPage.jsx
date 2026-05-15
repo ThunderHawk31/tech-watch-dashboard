@@ -1,10 +1,16 @@
 import { Zap, Cpu, Info, TrendingUp, Star, Heart, BookOpen, ChevronRight, Github, Linkedin } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { useSEO } from "../hooks/useSEO";
 
 const AboutPage = () => {
+  const seo = useSEO({
+    title: 'À propos',
+    description: 'Tech Watch Dashboard — système de veille IA & Tech automatisé. Architecture, technologies, et objectifs pédagogiques BTS SIO.',
+  });
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
+      {seo}
       <div className="mb-12">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4">À propos du projet</h1>
         <p className="text-xl text-muted-foreground">Un système de veille technologique automatisé alimenté par l'IA</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchArticles as fetchArticlesAPI, fetchArticleById } from "../api";
@@ -8,13 +9,25 @@ import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
 import ArticleModal from "../components/ArticleModal";
 import FiltersBar from "../components/FiltersBar";
+import FiltersBarSkeleton from "../components/FiltersBarSkeleton";
 import StatsOverview from "../components/StatsOverview";
 import ArticlesSkeleton from "../components/ArticlesSkeleton";
+
+// Extrait le premier paragraphe du champ analyse pour og:description
+function excerptFromAnalyse(analyse = '', maxLen = 150) {
+  let text = analyse;
+  if (text.trimStart().startsWith('{')) {
+    try { text = JSON.parse(text).resume || text; } catch { /* ignore */ }
+  }
+  text = text.replace(/#{1,3}\s*.+/g, '').replace(/[*_`#>]/g, '').trim();
+  return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
+}
 
 const HomePage = () => {
   const [articles, setArticles] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,6 +53,17 @@ const HomePage = () => {
     setFilters(f => ({ ...f, ticker: f.ticker === ticker ? "" : ticker }));
     setPage(1);
   };
+
+  // SEO dynamique : si un article est ouvert via /?article=UUID, injecter ses OG tags
+  const seoTitle = selectedArticle
+    ? selectedArticle.titre || 'Article — Tech Watch'
+    : 'Veille Technologique IA & Tech';
+  const seoDesc = selectedArticle
+    ? excerptFromAnalyse(selectedArticle.analyse)
+    : 'Analyses automatiques par IA — IA, Tech, Finance, Crypto. Mis à jour 2×/jour.';
+  const seoUrl = selectedArticle
+    ? `${window.location.origin}/?article=${selectedArticle.id}`
+    : window.location.origin;
 
   const handleOpenModal = (article) => {
     setSelectedArticle(article);
@@ -86,10 +110,12 @@ const HomePage = () => {
       setArticles(data.articles);
       setTotalCount(data.total);
       setStats(data.stats);
+      setIsInitialLoad(false);
       setLoading(false);
     } catch (error) {
       console.error('Erreur chargement:', error);
       toast.error("Erreur lors du chargement des articles");
+      setIsInitialLoad(false);
       setLoading(false);
     }
   };
@@ -107,6 +133,18 @@ const HomePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Helmet>
+        <title>{seoTitle} — Tech Watch</title>
+        <meta name="description" content={seoDesc} />
+        <meta property="og:title" content={`${seoTitle} — Tech Watch`} />
+        <meta property="og:description" content={seoDesc} />
+        <meta property="og:url" content={seoUrl} />
+        <meta property="og:type" content={selectedArticle ? 'article' : 'website'} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${seoTitle} — Tech Watch`} />
+        <meta name="twitter:description" content={seoDesc} />
+        <link rel="canonical" href={seoUrl} />
+      </Helmet>
       <div className="text-center mb-12">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
           Veille Technologique
@@ -143,7 +181,7 @@ const HomePage = () => {
       </div>
 
       <StatsOverview stats={stats} />
-      <FiltersBar filters={filters} setFilters={setFilters} />
+      {isInitialLoad ? <FiltersBarSkeleton /> : <FiltersBar filters={filters} setFilters={setFilters} />}
       <h2 className="sr-only">Liste des articles</h2>
 
       {loading ? (

@@ -6,13 +6,15 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Skeleton } from "./components/ui/skeleton";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
 import { sectorConfig as sectorConfigFull } from './lib/config';
+import { useSEO } from './hooks/useSEO';
+
 const sectorConfig = Object.fromEntries(
   Object.entries(sectorConfigFull).map(([k, v]) => [k, { color: v.color }])
 );
 
 const StatsPage = () => {
+  const seo = useSEO({ title: 'Statistiques', description: 'Répartition des articles par secteur, sentiment et importance — tableau de bord veille tech.' });
   const [stats, setStats] = useState(null);
   const [allArticles, setAllArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,7 @@ const StatsPage = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
+        {seo}
         <Skeleton className="h-10 w-64 mb-8" />
         <div className="grid md:grid-cols-2 gap-8">
           <Skeleton className="h-80" />
@@ -66,6 +69,7 @@ const StatsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {seo}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">Statistiques</h1>

@@ -5,14 +5,17 @@ import { useFavorites as useFavoritesContext } from "../contexts/FavoritesContex
 import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
 import ArticleModal from "../components/ArticleModal";
+import { useSEO } from "../hooks/useSEO";
 
 const FavoritesPage = () => {
   const { favorites } = useFavoritesContext();
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const seo = useSEO({ title: 'Mes Favoris', description: 'Vos articles de veille tech sauvegardés.' });
 
   if (favorites.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16">
+        {seo}
         <div className="text-center max-w-md mx-auto">
           <Star className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
           <h1 className="text-3xl font-bold mb-4">Aucun favori</h1>
@@ -33,6 +36,7 @@ const FavoritesPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {seo}
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold mb-2">Mes Favoris</h1>
         <p className="text-muted-foreground">

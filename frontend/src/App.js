@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
+import { HelmetProvider } from 'react-helmet-async';
 import { OfflineIndicator } from './components/InstallPrompt';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { InstallPWA } from './components/InstallPWA';
@@ -16,6 +17,8 @@ import AboutPage from './pages/AboutPage';
 import FavoritesPage from './pages/FavoritesPage';
 import TendancesPage from './pages/TendancesPage';
 import ChatWidget from './components/ChatWidget';
+import ErrorBoundary from './components/ErrorBoundary';
+import NotFoundPage from './pages/NotFoundPage';
 
 const StatsPage      = lazy(() => import('./StatsPage'));
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
@@ -69,6 +72,7 @@ function App() {
               </Suspense>
             }
           />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />
@@ -78,20 +82,24 @@ function App() {
 
 function AppWrapper() {
   return (
-    <BrowserRouter>
-      <OfflineIndicator />
-      <ThemeProvider>
-        <LangProvider>
-          <FavoritesProvider>
-            <IOSInstallPrompt />
-            <InstallPWA />
-            <App />
-            <Toaster position="top-right" richColors />
-            <ChatWidget />
-          </FavoritesProvider>
-        </LangProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <OfflineIndicator />
+        <ThemeProvider>
+          <LangProvider>
+            <FavoritesProvider>
+              <IOSInstallPrompt />
+              <InstallPWA />
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
+              <Toaster position="top-right" richColors />
+              <ChatWidget />
+            </FavoritesProvider>
+          </LangProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 
