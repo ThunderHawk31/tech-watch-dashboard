@@ -38,6 +38,7 @@ const SectorHeatWidget = ({ expanded = false }) => {
         const cfg = sectorConfig[s.sector] || sectorConfig["Autre"];
         const Icon = cfg.icon;
         const intensity = Math.round((s.heat_score / max) * 100);
+        const total = (s.positive_count || 0) + (s.negative_count || 0) + (s.neutral_count || 0);
         return (
           <div key={s.sector} className="flex items-center gap-4 p-4 rounded-xl bg-card/60 border border-border">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted shrink-0">
@@ -45,8 +46,22 @@ const SectorHeatWidget = ({ expanded = false }) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm">{s.sector}</span>
-                <span className="text-xs text-muted-foreground">{intensity}%</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">{s.sector}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.article_count} article{s.article_count > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {total > 0 && (
+                    <div className="flex items-center gap-1 text-xs">
+                      {s.positive_count > 0 && <span className="text-emerald-400">↑{s.positive_count}</span>}
+                      {s.negative_count > 0 && <span className="text-red-400">↓{s.negative_count}</span>}
+                      {s.neutral_count > 0 && <span className="text-muted-foreground">={s.neutral_count}</span>}
+                    </div>
+                  )}
+                  <span className="text-xs text-muted-foreground">{intensity}%</span>
+                </div>
               </div>
               <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${intensity}%`, backgroundColor: cfg.color }} />
