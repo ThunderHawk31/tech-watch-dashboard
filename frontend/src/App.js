@@ -9,6 +9,7 @@ import { InstallPWA } from './components/InstallPWA';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LangProvider } from './contexts/LangContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
+import { SourcesProvider } from './contexts/SourcesContext';
 import { HeaderNew as Header } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
 import Footer from './components/Footer';
@@ -106,6 +107,7 @@ function AppWrapper() {
         <ThemeProvider>
           <LangProvider>
             <FavoritesProvider>
+              <SourcesProvider>
               <IOSInstallPrompt />
               <InstallPWA />
               <ErrorBoundary>
@@ -113,6 +115,7 @@ function AppWrapper() {
               </ErrorBoundary>
               <Toaster position="top-right" richColors />
               <ChatWidget />
+              </SourcesProvider>
             </FavoritesProvider>
           </LangProvider>
         </ThemeProvider>

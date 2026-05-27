@@ -10,15 +10,18 @@ import { sanitizeText } from "../utils/sanitizer";
 import { useLang } from "../contexts/LangContext";
 import { useFavorites as useFavoritesContext } from "../contexts/FavoritesContext";
 import { ShareButton } from "./ShareButton";
+import { useSources, getSourceInfo } from "../contexts/SourcesContext";
 
 const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker }) => {
   const { isFavorite, toggleFavorite } = useFavoritesContext();
   const { lang, setLang } = useLang();
+  const sources = useSources();
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
   const SectorIcon = sector.icon;
   const SentimentIcon = sentiment.icon;
 
+  const sourceInfo = getSourceInfo(article.url, sources);
   const isArticleFavorite = isFavorite(article.url);
 
   const getTitle = () => {
@@ -98,10 +101,15 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between mb-2">
-          <Badge className={`${sector.bg} ${sector.text} border-0 gap-1.5`}>
-            <SectorIcon className="w-3 h-3" />
-            {article.secteur}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${sector.bg} ${sector.text} border-0 gap-1.5`}>
+              <SectorIcon className="w-3 h-3" />
+              {article.secteur}
+            </Badge>
+            {sourceInfo?.type === 'newsletter' && (
+              <span className="text-sm text-muted-foreground">· {sourceInfo.name}</span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleToggleFavorite}

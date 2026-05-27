@@ -1,10 +1,29 @@
 import { validateFilters, sanitizeSearch } from './validation/filters';
 
-const SUPABASE_URL = `${process.env.REACT_APP_SUPABASE_BASE_URL}/rest/v1/techwatch_articles`;
+const SUPABASE_BASE     = process.env.REACT_APP_SUPABASE_BASE_URL;
+const SUPABASE_URL      = `${SUPABASE_BASE}/rest/v1/techwatch_articles`;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const CACHE_KEY = 'tech_watch_cache';
+const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_KEY      = 'tech_watch_cache';
+
+// Cache en mémoire pour les sources (valide toute la session)
+let _sourcesCache = null;
+
+export async function fetchSources() {
+  if (_sourcesCache) return _sourcesCache;
+  try {
+    const res = await fetch(
+      `${SUPABASE_BASE}/rest/v1/flux_sources?select=*&active=eq.true&order=type.asc,name.asc`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _sourcesCache = await res.json();
+    return _sourcesCache;
+  } catch {
+    return [];
+  }
+}
 
 // Récupère le cache depuis localStorage
 function getCache() {

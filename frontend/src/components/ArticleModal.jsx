@@ -8,11 +8,15 @@ import { sectorConfig, sentimentConfig } from "../lib/config";
 import { formatDate, renderStars, parseAnalysis } from "../lib/appUtils";
 import { sanitizeURL } from "../utils/sanitizer";
 import { useLang } from "../contexts/LangContext";
+import { useSources, getSourceInfo } from "../contexts/SourcesContext";
 
 const ArticleModal = ({ article, open, onClose }) => {
   if (!article) return null;
 
   const { lang } = useLang();
+  const sources = useSources();
+  const sourceInfo = getSourceInfo(article.url, sources);
+  const newsletterSource = sourceInfo?.type === 'newsletter' ? sourceInfo.name : null;
   const modalTitle = lang === 'en' && article.titre_en
     ? article.titre_en
     : (article.titre || article.url.split('/').pop().replace(/-/g, ' '));
@@ -97,7 +101,7 @@ const ArticleModal = ({ article, open, onClose }) => {
           <Button asChild className="flex-1 gap-2">
             <a href={sanitizeURL(article.url)} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4" />
-              Voir l'article original
+              {newsletterSource ? `Voir l'article original (${newsletterSource})` : "Voir l'article original"}
             </a>
           </Button>
           <Button
