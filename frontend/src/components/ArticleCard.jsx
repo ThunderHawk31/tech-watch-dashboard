@@ -11,30 +11,6 @@ import { useLang } from "../contexts/LangContext";
 import { useFavorites as useFavoritesContext } from "../contexts/FavoritesContext";
 import { ShareButton } from "./ShareButton";
 
-const SOURCE_MAP = {
-  'techcrunch.com':       'TechCrunch',
-  'oreilly.com':          "O'Reilly",
-  'thehackernews.com':    'The Hacker News',
-  'coindesk.com':         'CoinDesk',
-  'huggingface.co':       'HuggingFace',
-  'lesechos.fr':          'Les Echos',
-  'zonebourse.com':       'Zonebourse',
-  'cert.ssi.gouv.fr':     'CertFR',
-  'certfr.gouv.fr':       'CertFR',
-};
-
-function getSource(url) {
-  try {
-    const host = new URL(url).hostname.replace('www.', '');
-    for (const [key, name] of Object.entries(SOURCE_MAP)) {
-      if (host.includes(key)) return name;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker }) => {
   const { isFavorite, toggleFavorite } = useFavoritesContext();
   const { lang, setLang } = useLang();
@@ -155,11 +131,6 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
       <CardContent className="pb-3">
         <div className="flex items-center gap-3 mb-3 text-sm text-muted-foreground">
           <span>{formatDate(article.date)}</span>
-          {getSource(article.url) && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
-              {getSource(article.url)}
-            </span>
-          )}
           <Badge className={`${sentiment.bg} ${sentiment.text} border-0 gap-1`}>
             <SentimentIcon className="w-3 h-3" />
             {article.sentiment}
