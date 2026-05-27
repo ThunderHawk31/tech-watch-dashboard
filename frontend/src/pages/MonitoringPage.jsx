@@ -105,7 +105,11 @@ export default function MonitoringPage() {
           {latest?.flux_status
             ? (
               <div className="flex flex-wrap gap-4">
-                {Object.entries(latest.flux_status).map(([flux, status]) => {
+                {Object.entries(
+                  typeof latest.flux_status === 'string'
+                    ? JSON.parse(latest.flux_status)
+                    : latest.flux_status
+                ).map(([flux, status]) => {
                   const b = fluxBadge(status);
                   return (
                     <div key={flux} className="flex items-center gap-2">
