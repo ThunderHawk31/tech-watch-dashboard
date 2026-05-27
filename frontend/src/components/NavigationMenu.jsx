@@ -5,7 +5,7 @@ import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import {
   Home, Bookmark, BarChart3, Info,
-  Sun, Moon, Zap, Sparkles, TrendingUp, Activity
+  Sun, Moon, Zap, Sparkles, TrendingUp, Activity, Star
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useFavorites } from "../contexts/FavoritesContext";
@@ -52,6 +52,12 @@ export const NavigationMenu = ({ isOpen, setIsOpen }) => {
       label: "Monitoring",
       icon: Activity,
       description: "Santé des flux RSS"
+    },
+    {
+      path: "/watchlist",
+      label: "Watchlist",
+      icon: Star,
+      description: "Tickers sous surveillance"
     },
   ];
 

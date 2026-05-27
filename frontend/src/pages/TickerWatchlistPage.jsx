@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_BASE = process.env.REACT_APP_SUPABASE_BASE_URL;
+const SUPABASE_KEY  = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-async function supabase(method, path, body) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+async function supabaseRequest(method, path, body) {
+  const res = await fetch(`${SUPABASE_BASE}/rest/v1/${path}`, {
     method,
     headers: {
       apikey: SUPABASE_KEY,
@@ -18,7 +18,7 @@ async function supabase(method, path, body) {
   return res.status === 204 ? null : res.json();
 }
 
-export default function TickerWatchlist() {
+export default function TickerWatchlistPage() {
   const [tickers, setTickers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tickerInput, setTickerInput] = useState('');
@@ -30,9 +30,9 @@ export default function TickerWatchlist() {
 
   async function load() {
     try {
-      const data = await supabase('GET', 'ticker_watchlist?order=created_at.desc&select=*');
+      const data = await supabaseRequest('GET', 'ticker_watchlist?order=created_at.desc&select=*');
       setTickers(data);
-    } catch (e) {
+    } catch {
       showToast('Erreur de chargement', true);
     } finally {
       setLoading(false);
@@ -44,7 +44,7 @@ export default function TickerWatchlist() {
     if (!t) return;
     setAdding(true);
     try {
-      await supabase('POST', 'ticker_watchlist', {
+      await supabaseRequest('POST', 'ticker_watchlist', {
         ticker: t,
         label: labelInput.trim() || t,
         active: true,
@@ -61,14 +61,14 @@ export default function TickerWatchlist() {
   }
 
   async function toggleActive(id, current) {
-    await supabase('PATCH', `ticker_watchlist?id=eq.${id}`, { active: !current });
+    await supabaseRequest('PATCH', `ticker_watchlist?id=eq.${id}`, { active: !current });
     await load();
     showToast(current ? 'Désactivé' : 'Activé');
   }
 
   async function deleteTicker(id, ticker) {
     if (!window.confirm(`Supprimer ${ticker} ?`)) return;
-    await supabase('DELETE', `ticker_watchlist?id=eq.${id}`);
+    await supabaseRequest('DELETE', `ticker_watchlist?id=eq.${id}`);
     setTickers(prev => prev.filter(t => t.id !== id));
     showToast('✓ Supprimé');
   }
@@ -82,7 +82,6 @@ export default function TickerWatchlist() {
 
   return (
     <div style={styles.page}>
-      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <h1 style={styles.title}>Ticker Watchlist</h1>
@@ -93,14 +92,13 @@ export default function TickerWatchlist() {
         </p>
       </div>
 
-      {/* Add form */}
       <div style={styles.addForm}>
         <input
           style={styles.tickerInput}
           value={tickerInput}
           onChange={e => setTickerInput(e.target.value.toUpperCase())}
           onKeyDown={e => e.key === 'Enter' && addTicker()}
-          placeholder="TICKER"
+          placeholder="TICKER (ex: ASML)"
           maxLength={10}
         />
         <input
@@ -119,11 +117,10 @@ export default function TickerWatchlist() {
         </button>
       </div>
 
-      {/* Stats */}
       <div style={styles.stats}>
         {[
-          { val: tickers.length, lbl: 'Total', color: '#e8edf4' },
-          { val: activeCount, lbl: 'Actifs', color: '#22c55e' },
+          { val: tickers.length, lbl: 'Total',    color: '#e8edf4' },
+          { val: activeCount,    lbl: 'Actifs',   color: '#22c55e' },
           { val: tickers.length - activeCount, lbl: 'Inactifs', color: '#64748b' },
         ].map(s => (
           <div key={s.lbl} style={styles.stat}>
@@ -133,7 +130,6 @@ export default function TickerWatchlist() {
         ))}
       </div>
 
-      {/* List */}
       {loading ? (
         <div style={styles.empty}>Chargement…</div>
       ) : tickers.length === 0 ? (
@@ -174,12 +170,8 @@ export default function TickerWatchlist() {
         </>
       )}
 
-      {/* Toast */}
       {toast && (
-        <div style={{
-          ...styles.toast,
-          borderLeftColor: toast.error ? '#ef4444' : '#22c55e',
-        }}>
+        <div style={{ ...styles.toast, borderLeftColor: toast.error ? '#ef4444' : '#22c55e' }}>
           {toast.msg}
         </div>
       )}
@@ -188,162 +180,61 @@ export default function TickerWatchlist() {
 }
 
 const styles = {
-  page: {
-    maxWidth: 680,
-    margin: '0 auto',
-    padding: '32px 24px',
-    fontFamily: "'DM Sans', sans-serif",
-    color: '#e8edf4',
-  },
-  header: { marginBottom: 28 },
+  page:       { maxWidth: 680, margin: '0 auto', padding: '32px 24px', fontFamily: "'DM Sans', sans-serif", color: '#e8edf4' },
+  header:     { marginBottom: 28 },
   headerLeft: { display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.3px', color: '#e8edf4' },
+  title:      { fontSize: 22, fontWeight: 600, letterSpacing: '-0.3px', color: '#e8edf4' },
   tag: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 11,
-    color: '#D4A853',
-    background: 'rgba(212,168,83,0.1)',
-    border: '1px solid rgba(212,168,83,0.2)',
-    padding: '2px 8px',
-    borderRadius: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#D4A853',
+    background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)',
+    padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 1,
   },
-  subtitle: { fontSize: 13, color: '#64748b', lineHeight: 1.5 },
-  addForm: { display: 'flex', gap: 10, marginBottom: 24 },
+  subtitle:   { fontSize: 13, color: '#64748b', lineHeight: 1.5 },
+  addForm:    { display: 'flex', gap: 10, marginBottom: 24 },
   tickerInput: {
-    width: 100,
-    background: '#0d1a2d',
-    border: '1px solid #1e2d42',
-    borderRadius: 8,
-    padding: '10px 12px',
-    color: '#e8edf4',
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 13,
-    outline: 'none',
+    width: 130, background: '#0d1a2d', border: '1px solid #1e2d42', borderRadius: 8,
+    padding: '10px 12px', color: '#e8edf4', fontFamily: "'DM Mono', monospace", fontSize: 13, outline: 'none',
   },
   labelInput: {
-    flex: 1,
-    background: '#0d1a2d',
-    border: '1px solid #1e2d42',
-    borderRadius: 8,
-    padding: '10px 12px',
-    color: '#e8edf4',
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: 13,
-    outline: 'none',
+    flex: 1, background: '#0d1a2d', border: '1px solid #1e2d42', borderRadius: 8,
+    padding: '10px 12px', color: '#e8edf4', fontFamily: "'DM Sans', sans-serif", fontSize: 13, outline: 'none',
   },
   btn: {
-    background: '#2563EB',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    fontFamily: "'DM Sans', sans-serif",
+    background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8,
+    padding: '10px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+    whiteSpace: 'nowrap', fontFamily: "'DM Sans', sans-serif",
   },
-  stats: { display: 'flex', gap: 12, marginBottom: 20 },
-  stat: {
-    background: '#0d1a2d',
-    border: '1px solid #1e2d42',
-    borderRadius: 8,
-    padding: '10px 16px',
-  },
-  statVal: { fontSize: 18, fontWeight: 500, fontFamily: "'DM Mono', monospace" },
-  statLbl: {
-    fontSize: 10,
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    marginTop: 2,
-    fontFamily: "'DM Mono', monospace",
-  },
-  sectionLabel: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 10,
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 10,
-  },
-  list: { display: 'flex', flexDirection: 'column', gap: 8 },
+  stats:    { display: 'flex', gap: 12, marginBottom: 20 },
+  stat:     { background: '#0d1a2d', border: '1px solid #1e2d42', borderRadius: 8, padding: '10px 16px' },
+  statVal:  { fontSize: 18, fontWeight: 500, fontFamily: "'DM Mono', monospace" },
+  statLbl:  { fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: 2, fontFamily: "'DM Mono', monospace" },
+  sectionLabel: { fontFamily: "'DM Mono', monospace", fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  list:     { display: 'flex', flexDirection: 'column', gap: 8 },
   row: {
-    background: '#0d1a2d',
-    border: '1px solid #1e2d42',
-    borderRadius: 10,
-    padding: '14px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
+    background: '#0d1a2d', border: '1px solid #1e2d42', borderRadius: 10,
+    padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
   },
   badge: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#D4A853',
-    background: 'rgba(212,168,83,0.08)',
-    border: '1px solid rgba(212,168,83,0.15)',
-    padding: '3px 10px',
-    borderRadius: 5,
-    minWidth: 64,
-    textAlign: 'center',
+    fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500, color: '#D4A853',
+    background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)',
+    padding: '3px 10px', borderRadius: 5, minWidth: 64, textAlign: 'center',
   },
-  rowLabel: { flex: 1, fontSize: 14, color: '#e8edf4' },
-  rowDate: {
-    fontFamily: "'DM Mono', monospace",
-    fontSize: 11,
-    color: '#64748b',
-  },
+  rowLabel:   { flex: 1, fontSize: 14, color: '#e8edf4' },
+  rowDate:    { fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#64748b' },
   toggle: {
-    width: 36,
-    height: 20,
-    borderRadius: 10,
-    border: 'none',
-    cursor: 'pointer',
-    position: 'relative',
-    flexShrink: 0,
-    transition: 'background 0.2s',
+    width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+    position: 'relative', flexShrink: 0, transition: 'background 0.2s',
   },
   toggleDot: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    background: 'white',
-    borderRadius: '50%',
-    top: 3,
-    left: 3,
-    transition: 'transform 0.2s',
-    display: 'block',
+    position: 'absolute', width: 14, height: 14, background: 'white',
+    borderRadius: '50%', top: 3, left: 3, transition: 'transform 0.2s', display: 'block',
   },
-  deleteBtn: {
-    background: 'none',
-    border: '1px solid transparent',
-    color: '#64748b',
-    cursor: 'pointer',
-    borderRadius: 6,
-    padding: '4px 8px',
-    fontSize: 13,
-  },
-  empty: {
-    textAlign: 'center',
-    padding: '48px 0',
-    color: '#64748b',
-    fontSize: 14,
-  },
+  deleteBtn:  { background: 'none', border: '1px solid transparent', color: '#64748b', cursor: 'pointer', borderRadius: 6, padding: '4px 8px', fontSize: 13 },
+  empty:      { textAlign: 'center', padding: '48px 0', color: '#64748b', fontSize: 14 },
   toast: {
-    position: 'fixed',
-    bottom: 24,
-    right: 24,
-    background: '#111f33',
-    border: '1px solid #1e2d42',
-    borderLeft: '3px solid #22c55e',
-    color: '#e8edf4',
-    padding: '10px 16px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontFamily: "'DM Sans', sans-serif",
+    position: 'fixed', bottom: 24, right: 24, background: '#111f33',
+    border: '1px solid #1e2d42', borderLeft: '3px solid #22c55e',
+    color: '#e8edf4', padding: '10px 16px', borderRadius: 8,
+    fontSize: 13, fontFamily: "'DM Sans', sans-serif",
   },
 };

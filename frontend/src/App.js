@@ -20,8 +20,9 @@ import ChatWidget from './components/ChatWidget';
 import ErrorBoundary from './components/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 
-const StatsPage      = lazy(() => import('./StatsPage'));
-const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
+const StatsPage            = lazy(() => import('./StatsPage'));
+const MonitoringPage       = lazy(() => import('./pages/MonitoringPage'));
+const TickerWatchlistPage  = lazy(() => import('./pages/TickerWatchlistPage'));
 
 function App() {
 
@@ -69,6 +70,23 @@ function App() {
                 </div>
               }>
                 <MonitoringPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/watchlist"
+            element={
+              <Suspense fallback={
+                <div className="container mx-auto px-4 py-8">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-8 w-48 bg-gray-700 rounded" />
+                    <div className="h-10 bg-gray-700 rounded-xl" />
+                    <div className="h-20 bg-gray-700 rounded-xl" />
+                    <div className="h-20 bg-gray-700 rounded-xl" />
+                  </div>
+                </div>
+              }>
+                <TickerWatchlistPage />
               </Suspense>
             }
           />
