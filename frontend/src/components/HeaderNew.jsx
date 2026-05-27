@@ -95,12 +95,12 @@ export const HeaderNew = () => {
                 À propos
               </Link>
               <Link
-                to="/monitoring"
+                to="/watchlist"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/monitoring') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  isActive('/watchlist') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                Monitoring
+                Watchlist
               </Link>
             </nav>
 
