@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { Info, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
 import { fetchArticles as fetchArticlesAPI, fetchArticleById } from "../api";
 import { sectorConfig } from "../lib/config";
 import { Button } from "../components/ui/button";
@@ -181,6 +181,15 @@ const HomePage = () => {
       </div>
 
       <StatsOverview stats={stats} />
+      <div className="flex justify-end mb-4">
+        <Link
+          to="/digest"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Newspaper className="w-4 h-4" />
+          Digest du jour
+        </Link>
+      </div>
       {isInitialLoad ? <FiltersBarSkeleton /> : <FiltersBar filters={filters} setFilters={setFilters} />}
       <h2 className="sr-only">Liste des articles</h2>
 

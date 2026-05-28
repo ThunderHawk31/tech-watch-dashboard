@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bookmark, Zap, Menu, Sun, Moon } from "lucide-react";
+import { Bookmark, Zap, Sun, Moon } from "lucide-react";
 import { NavigationMenu } from "./NavigationMenu";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { useLang } from "../contexts/LangContext";
 import { Badge } from "./ui/badge";
 import { InstallButton } from './InstallButton';
 
@@ -12,8 +11,7 @@ export const HeaderNew = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { favorites, count } = useFavorites();
   const { isDark, setIsDark } = useTheme();
-  const { lang, setLang } = useLang();
-  const location = useLocation();
+const location = useLocation();
 
   const isActive = (path) => {
     return location.pathname === path;

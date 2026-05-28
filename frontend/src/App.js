@@ -24,6 +24,7 @@ import NotFoundPage from './pages/NotFoundPage';
 const StatsPage            = lazy(() => import('./StatsPage'));
 const MonitoringPage       = lazy(() => import('./pages/MonitoringPage'));
 const TickerWatchlistPage  = lazy(() => import('./pages/TickerWatchlistPage'));
+const DigestPage           = lazy(() => import('./pages/DigestPage'));
 
 function App() {
 
@@ -88,6 +89,22 @@ function App() {
                 </div>
               }>
                 <TickerWatchlistPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/digest"
+            element={
+              <Suspense fallback={
+                <div className="container mx-auto px-4 py-8 max-w-3xl">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-8 w-48 bg-gray-700 rounded" />
+                    <div className="h-40 bg-gray-700 rounded-xl" />
+                    <div className="h-40 bg-gray-700 rounded-xl" />
+                  </div>
+                </div>
+              }>
+                <DigestPage />
               </Suspense>
             }
           />
