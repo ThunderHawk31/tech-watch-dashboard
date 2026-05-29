@@ -1,4 +1,4 @@
-const N8N_URL = 'https://thunderhawk.app.n8n.cloud/webhook/5e4c965c-6c3a-473e-aad0-119e47ec845c/chat';
+const N8N_URL = 'https://thunderstorm23488.app.n8n.cloud/webhook/5e4c965c-6c3a-473e-aad0-119e47ec845c/chat';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
