@@ -19,7 +19,7 @@ const ArticleModal = ({ article, open, onClose }) => {
   const newsletterSource = sourceInfo?.type === 'newsletter' ? sourceInfo.name : null;
   const modalTitle = lang === 'en' && article.titre_en
     ? article.titre_en
-    : (article.titre || article.url.split('/').pop().replace(/-/g, ' '));
+    : (article.titre || 'Sans titre');
 
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
