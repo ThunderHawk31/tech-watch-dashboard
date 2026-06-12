@@ -14,9 +14,9 @@
     },
     {
       "parameters": {
-        "sendTo": "nolanfirstiron@gmail.com",
+        "sendTo": "YOUR_EMAIL@gmail.com",
         "subject": "=🚨 TechWatch — Crash : {{ $json.workflow.name }}",
-        "message": "=<b>Workflow :</b> {{ $json.workflow.name }}<br><br>\n<b>Node en erreur :</b> {{ $json.execution.lastNodeExecuted }}<br><br>\n<b>Message :</b> {{ $json.execution.error.message }}<br><br>\n<b>Heure :</b> {{ $json.execution.startedAt }}<br><br>\n<a href=\"https://thunderhawk.app.n8n.cloud/workflow/{{ $json.workflow.id }}\">\n  🔗 Ouvrir le workflow dans n8n\n</a>",
+        "message": "=<b>Workflow :</b> {{ $json.workflow.name }}<br><br>\n<b>Node en erreur :</b> {{ $json.execution.lastNodeExecuted }}<br><br>\n<b>Message :</b> {{ $json.execution.error.message }}<br><br>\n<b>Heure :</b> {{ $json.execution.startedAt }}<br><br>\n<a href=\"https://YOUR_N8N_INSTANCE.app.n8n.cloud/workflow/{{ $json.workflow.id }}\">\n  🔗 Ouvrir le workflow dans n8n\n</a>",
         "options": {}
       },
       "type": "n8n-nodes-base.gmail",

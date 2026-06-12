@@ -163,6 +163,20 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 
 ---
 
+## 🤖 Bonus — Contrôler n8n depuis Claude Code (MCP)
+
+Si vous utilisez **Claude Code** (le CLI d'Anthropic), vous pouvez connecter votre instance n8n directement via MCP pour gérer les workflows sans ouvrir l'interface web.
+
+### Activer l'intégration n8n MCP
+
+1. Dans Claude Code → ouvrir les settings (`/config` ou Cmd+,)
+2. Aller dans **"MCP Servers"** → chercher **"n8n"** → activer
+3. Renseigner votre URL n8n (ex : `https://moninstance.app.n8n.cloud`) et votre API key n8n (Settings → API in n8n)
+
+Une fois connecté, Claude Code peut exécuter, modifier et créer des workflows directement via des commandes en langage naturel.
+
+---
+
 ## 📁 Structure du repo
 
 ```
@@ -170,6 +184,7 @@ tech-watch-dashboard/
 ├── frontend/          # App React → déployer sur Vercel
 │   ├── src/
 │   └── .env.example   # Variables à configurer
+├── n8n-workflow/      # Workflows n8n à importer (credentials à remplacer)
 └── README.md
 ```
 
