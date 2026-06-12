@@ -224,21 +224,23 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 4. Configurer les **Credentials** (menu gauche → "Credentials" → "Add credential") :
 
    **Claude API** (obligatoire)
-   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → se connecter ou créer un compte → "API Keys" → créer une clé (`sk-ant-...`)
-   - Dans n8n : type **"Header Auth"** → Header Name : `x-api-key` → Value : votre clé Claude
-   - Nommer exactement : `Clé API Claude`
+   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → se connecter ou créer un compte → **"API Keys"** → **"Create Key"** → copier la clé (commence par `sk-ant-...`)
+   - Dans n8n : type **"Header Auth"** → Header Name : `x-api-key` → Value : coller la clé → nommer exactement : `Clé API Claude`
+   - ⚠️ **La clé Claude nécessite un solde minimum** (~$5) pour fonctionner — recharger sur console.anthropic.com → **"Settings" → "Billing"**
 
    **Supabase Service Role** (obligatoire — écriture en base)
    - Dans n8n : type **"Bearer Token Auth"** → Token : votre **service_role key** Supabase
    - Nommer : `Clé Service Role Supabase`
    - **Important** : dans chaque node avec un header `apikey` hardcodé (Insert Supabase, Log Article Skippé, Charger entités VIP, Charger Watchlist), remplacer `YOUR_SUPABASE_SERVICE_ROLE_KEY` par votre clé
+   - ⚠️ **Ne jamais utiliser la service_role key dans le frontend** — elle donne un accès total en lecture/écriture à votre base de données
 
    **Supabase Anon** (obligatoire — lecture)
    - Dans n8n : type **"Header Auth"** → Header Name : `apikey` → Value : votre **anon key** Supabase
    - Nommer : `Clé Anon Supabase`
+   - ℹ️ **Différence anon vs service_role** : l'anon key est publique (lecture seule, utilisée aussi dans le frontend). La service_role key est privée et contourne les restrictions de sécurité — à garder secrète.
 
    **Gmail** (optionnel — alertes email)
-   - Dans n8n : type "Google OAuth2" → suivre les instructions d'autorisation
+   - Dans n8n : type **"Google OAuth2"** → suivre les instructions d'autorisation Google → autoriser l'accès à votre compte Gmail
 
 5. **Mettre à jour les URLs Supabase** : dans chaque node HTTP Request pointant vers Supabase, remplacer `YOUR_PROJECT_ID` par votre vrai project ID
 6. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
@@ -312,6 +314,8 @@ Pour adapter à vos propres newsletters :
 4. Adapter le prompt dans le node **Claude API** à votre newsletter
 5. Mettre à jour le **Parser Newsletter** si le format de sortie change
 6. Ajouter la newsletter dans la table `flux_sources` Supabase (pour le badge affiché sur le dashboard)
+
+> 🤖 **Astuce MCP** : si vous avez connecté n8n à Claude (voir section MCP ci-dessous), vous pouvez demander directement à Claude de vous guider pour adapter une branche newsletter — il peut lire vos nodes, modifier les prompts et expliquer chaque étape en langage naturel.
 
 ---
 
