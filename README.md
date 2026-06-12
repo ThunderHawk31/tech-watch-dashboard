@@ -126,24 +126,32 @@ n8n est l'outil qui va automatiquement récupérer et analyser les articles. Il 
 
 ### Étape 4 — Importer le workflow n8n
 
-> ⚠️ **Le fichier workflow doit être demandé directement à l'auteur** — [Nolan](https://github.com/ThunderHawk31). Envoyez-lui un message pour obtenir le fichier `techwatch-workflow.json`.
+Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de ce repo.
 
 1. Dans n8n → menu gauche **"Workflows"** → bouton **"Add workflow"** → icône **"..."** en haut → **"Import from file"**
-2. Sélectionner le fichier `techwatch-workflow.json` reçu
+2. Sélectionner le fichier `wjMOoZdDxMJHyNx0-Analyseur_Article_Finance_Auto_RSS.json`
 3. Configurer les **Credentials** (menu gauche → "Credentials" → "Add credential") :
 
    **Claude API** (obligatoire)
-   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → créer un compte → ajouter une carte bancaire → "API Keys" → créer une clé
-   - Dans n8n : type "Anthropic" → coller la clé
+   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → créer un compte → ajouter une carte bancaire → "API Keys" → créer une clé (`sk-ant-...`)
+   - Dans n8n : type **"Header Auth"** → Header Name : `x-api-key` → Value : votre clé Claude
+   - Nommer cette credential exactement : `Clé API Claude`
 
-   **Supabase** (obligatoire)
-   - Dans n8n : type "Header Auth" → Header Name : `apikey` → Value : votre **service_role key** Supabase
-   - Mettre aussi à jour l'URL Supabase dans les nodes "Insert Supabase" du workflow
+   **Supabase Service Role** (obligatoire — écriture en base)
+   - Dans n8n : type **"Bearer Token Auth"** → Token : votre **service_role key** Supabase
+   - Nommer : `Clé Service Role Supabase`
+   - **Important** : dans chaque node qui contient un header `apikey` hardcodé (Insert Supabase, Log Article Skippé, Charger entités VIP, Charger Watchlist), remplacer `YOUR_SUPABASE_SERVICE_ROLE_KEY` par votre service_role key
 
-   **Gmail** (optionnel — pour recevoir les alertes)
+   **Supabase Anon** (obligatoire — lecture)
+   - Dans n8n : type **"Header Auth"** → Header Name : `apikey` → Value : votre **anon key** Supabase
+   - Nommer : `Clé Anon Supabase`
+
+   **Gmail** (optionnel — pour recevoir les alertes email)
    - Dans n8n : type "Google OAuth2" → suivre les instructions d'autorisation
 
-4. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
+4. **Mettre à jour les URLs Supabase** : dans chaque node HTTP Request pointant vers Supabase, remplacer `YOUR_PROJECT_ID` par votre vrai project ID (ex : `https://xxxxxxxxxxxx.supabase.co/...`)
+
+5. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
 
 ---
 
