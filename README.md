@@ -225,6 +225,7 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 
    **Claude API** (obligatoire)
    - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → se connecter ou créer un compte → **"API Keys"** → **"Create Key"** → copier la clé (commence par `sk-ant-...`)
+   - 🔑 **Les clés API ne sont affichées qu'une seule fois** au moment de leur création — pensez à les copier immédiatement et à les sauvegarder dans un endroit sûr (gestionnaire de mots de passe, fichier local protégé…)
    - Dans n8n : type **"Header Auth"** → Header Name : `x-api-key` → Value : coller la clé → nommer exactement : `Clé API Claude`
    - ⚠️ **La clé Claude nécessite un solde minimum** (~$5) pour fonctionner — recharger sur console.anthropic.com → **"Settings" → "Billing"**
 
@@ -240,7 +241,12 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
    - ℹ️ **Différence anon vs service_role** : l'anon key est publique (lecture seule, utilisée aussi dans le frontend). La service_role key est privée et contourne les restrictions de sécurité — à garder secrète.
 
    **Gmail** (optionnel — alertes email)
-   - Dans n8n : type **"Google OAuth2"** → suivre les instructions d'autorisation Google → autoriser l'accès à votre compte Gmail
+   - Dans n8n : type **"Google OAuth2"** → suivre les instructions d'autorisation Google
+   - Lors de la page de confirmation Google, vérifier que les **3 accès suivants sont bien listés** avant d'accepter :
+     - *Lire, rédiger, envoyer et supprimer définitivement des e-mails dans Gmail*
+     - *Consulter vos e-mails lorsque vous interagissez avec le module complémentaire*
+     - *Consulter, rédiger et envoyer des e-mails à partir de votre compte Gmail*
+   - Ces droits sont nécessaires pour que n8n puisse lire les newsletters et envoyer les alertes
 
 5. **Mettre à jour les URLs Supabase** : dans chaque node HTTP Request pointant vers Supabase, remplacer `YOUR_PROJECT_ID` par votre vrai project ID
 6. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
@@ -311,6 +317,8 @@ Pour adapter à vos propres newsletters :
 1. Dans n8n → ouvrir le workflow → repérer les branches connectées au **nœud Gmail newsletters** (sous la section "Zone IA & Nettoyage")
 2. Dupliquer une branche newsletter existante
 3. Modifier le **Gmail Trigger** pour cibler votre newsletter (filtre par expéditeur ou objet)
+   - Dans le node Gmail Trigger → activer le filtre **"Read Status" → "Unread emails only"** : le node ne traitera que les nouveaux mails non-lus, évitant de retraiter les mêmes newsletters
+   - **Poll Time** : définit la fréquence à laquelle n8n interroge Gmail pour de nouveaux mails — à régler selon votre besoin (ex : toutes les heures, ou à une heure fixe)
 4. Adapter le prompt dans le node **Claude API** à votre newsletter
 5. Mettre à jour le **Parser Newsletter** si le format de sortie change
 6. Ajouter la newsletter dans la table `flux_sources` Supabase (pour le badge affiché sur le dashboard)
