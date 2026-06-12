@@ -163,17 +163,27 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 
 ---
 
-## 🤖 Bonus — Contrôler n8n depuis Claude Code (MCP)
+## 🤖 Bonus — Contrôler n8n depuis Claude (MCP)
 
-Si vous utilisez **Claude Code** (le CLI d'Anthropic), vous pouvez connecter votre instance n8n directement via MCP pour gérer les workflows sans ouvrir l'interface web.
+Vous pouvez connecter votre instance n8n à Claude pour gérer les workflows en langage naturel, sans ouvrir l'interface n8n. Deux façons de le faire :
 
-### Activer l'intégration n8n MCP
+### Option A — Sur claude.ai (interface web)
 
-1. Dans Claude Code → ouvrir les settings (`/config` ou Cmd+,)
+1. Aller sur **[claude.ai](https://claude.ai)** → cliquer sur votre avatar en haut à droite → **"Paramètres"**
+2. Dans le menu gauche → **"Intégrations"**
+3. Cliquer **"Ajouter une intégration"** → chercher **n8n** dans la liste
+4. Renseigner :
+   - **URL** : `https://votre-instance.app.n8n.cloud` (votre domaine n8n)
+   - **API Key** : dans n8n → Settings → API → créer une clé
+5. Cliquer **"Connecter"** ✅
+
+Claude peut ensuite exécuter, lister et modifier vos workflows directement depuis la conversation.
+
+### Option B — Dans Claude Code (CLI)
+
+1. Ouvrir Claude Code → taper `/config`
 2. Aller dans **"MCP Servers"** → chercher **"n8n"** → activer
-3. Renseigner votre URL n8n (ex : `https://moninstance.app.n8n.cloud`) et votre API key n8n (Settings → API in n8n)
-
-Une fois connecté, Claude Code peut exécuter, modifier et créer des workflows directement via des commandes en langage naturel.
+3. Renseigner les mêmes URL et API Key qu'en option A
 
 ---
 
