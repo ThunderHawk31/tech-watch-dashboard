@@ -164,7 +164,54 @@ alter table flux_sources enable row level security;
 create policy "Public read" on flux_sources for select using (true);
 ```
 
-6. Aller dans **Project Settings** → **"API"** → cliquer sur **"Legacy anon, service_role API keys"** et noter :
+6. Exécuter une **seconde query** pour les tables utilisées par les fonctionnalités avancées (watchlist, logs, heatmap) :
+
+```sql
+-- Articles skippés (log des articles filtrés par n8n)
+create table techwatch_skipped (
+  id uuid default gen_random_uuid() primary key,
+  url text,
+  reason text,
+  source text,
+  created_at timestamptz default now()
+);
+alter table techwatch_skipped enable row level security;
+create policy "Service write" on techwatch_skipped for insert with check (true);
+
+-- Entités VIP (personnes/entreprises à surveiller en priorité)
+create table vip_entities (
+  id uuid default gen_random_uuid() primary key,
+  name text,
+  active boolean default true
+);
+alter table vip_entities enable row level security;
+create policy "Public read" on vip_entities for select using (true);
+
+-- Watchlist tickers (valeurs financières suivies)
+create table ticker_watchlist (
+  id uuid default gen_random_uuid() primary key,
+  ticker text,
+  active boolean default true,
+  created_at timestamptz default now()
+);
+alter table ticker_watchlist enable row level security;
+create policy "Public read" on ticker_watchlist for select using (true);
+
+-- Heatmap secteurs (statistiques par secteur)
+create table sector_heat (
+  id uuid default gen_random_uuid() primary key,
+  sector text,
+  article_count int default 0,
+  avg_importance numeric,
+  positive_count int default 0,
+  negative_count int default 0,
+  updated_at timestamptz default now()
+);
+alter table sector_heat enable row level security;
+create policy "Public read" on sector_heat for select using (true);
+```
+
+7. Aller dans **Project Settings** → **"API"** → cliquer sur **"Legacy anon, service_role API keys"** et noter :
    - **Project URL** : `https://xxxxxxxxxxxx.supabase.co`
    - **anon / public key** : commence par `eyJ...` (pour le frontend)
    - **service_role key** : cliquer "Reveal" (pour n8n uniquement — ne jamais mettre dans le code frontend)
@@ -311,10 +358,12 @@ tech-watch-dashboard/
 
 ### Adapter les newsletters
 
-Le workflow inclut des branches prédéfinies pour traiter des newsletters spécifiques (ZoneBourse, Aktionnaire, MoneyRadar). Ces branches sont celles **reliées au nœud Gmail (newsletters)**, juste en dessous de la section **"Zone IA & Nettoyage"**. Chaque newsletter a sa propre branche : Cleaner Email → Claude API → Parser Newsletter.
+Le workflow inclut des branches prédéfinies pour traiter des newsletters spécifiques (ZoneBourse, Aktionnaire, MoneyRadar). Ces branches sont celles **reliées au Gmail Trigger newsletters** — ce sont les 3 lignes parallèles (une par newsletter) connectées directement au nœud Gmail. Chaque branche suit le même schéma : Cleaner Email → Claude API → Parser Newsletter.
+
+> ℹ️ Ne pas confondre avec la **Zone IA & Nettoyage** (section RSS) — les newsletters ont leur propre déclencheur Gmail séparé.
 
 Pour adapter à vos propres newsletters :
-1. Dans n8n → ouvrir le workflow → repérer les branches connectées au **nœud Gmail newsletters** (sous la section "Zone IA & Nettoyage")
+1. Dans n8n → ouvrir le workflow → repérer les **3 branches reliées au Gmail Trigger newsletters** (les lignes parallèles avec "Cleaner Email", "Claude API" et "Parser Newsletter")
 2. Dupliquer une branche newsletter existante
 3. Modifier le **Gmail Trigger** pour cibler votre newsletter (filtre par expéditeur ou objet)
    - Dans le node Gmail Trigger → activer le filtre **"Read Status" → "Unread emails only"** : le node ne traitera que les nouveaux mails non-lus, évitant de retraiter les mêmes newsletters
