@@ -164,7 +164,7 @@ alter table flux_sources enable row level security;
 create policy "Public read" on flux_sources for select using (true);
 ```
 
-6. Aller dans **Settings** → **"Data API"** → noter :
+6. Aller dans **Project Settings** → **"API"** → cliquer sur **"Legacy anon, service_role API keys"** et noter :
    - **Project URL** : `https://xxxxxxxxxxxx.supabase.co`
    - **anon / public key** : commence par `eyJ...` (pour le frontend)
    - **service_role key** : cliquer "Reveal" (pour n8n uniquement — ne jamais mettre dans le code frontend)
@@ -199,11 +199,11 @@ n8n doit tourner en permanence sur un serveur.
 2. Un instance n8n est créée automatiquement — noter votre URL (ex : `https://moninstance.app.n8n.cloud`)
 3. Après les 15 jours d'essai, l'abonnement est payant (~$20/mois)
 
-**Option B — Railway (gratuit jusqu'à $5/mois de ressources)**
+**Option B — Railway (~12€/mois)**
 1. Aller sur **[railway.app](https://railway.app)** → créer un compte (via GitHub)
 2. Cliquer **"New Project"** → **"Deploy from template"** → chercher **"n8n"** → Deploy
 3. Attendre le déploiement (~3 min) → copier le domaine public → ouvrir dans le navigateur → créer un compte n8n
-4. Après épuisement du crédit gratuit, Railway devient payant à l'usage
+4. ⚠️ Railway est plus complexe à mettre en place et son coût est d'environ **12€/mois** — l'option A (n8n Cloud) est recommandée pour débuter
 
 **Option C — NAS ou serveur personnel** (si vous en avez un, contactez l'auteur)
 
@@ -216,11 +216,15 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 > ⚠️ Les fichiers contiennent des placeholders à remplacer par vos propres credentials avant utilisation.
 
 1. Dans n8n → menu gauche **"Workflows"** → **"Add workflow"** → icône **"..."** en haut → **"Import from file"**
-2. Sélectionner le fichier `wjMOoZdDxMJHyNx0-Analyseur_Article_Finance_Auto_RSS.json`
-3. Configurer les **Credentials** (menu gauche → "Credentials" → "Add credential") :
+2. Sélectionner le fichier **`Analyseur_Article_Finance_Auto_RSS.json`** — c'est le **workflow principal**, celui qui fait tout tourner
+3. Importer également le fichier **`Techwatch_Error_Workflow.json`** — ce workflow gère les erreurs et envoie un **email automatique** si l'un de vos workflows rencontre une erreur
+
+   > 💡 **Activer les notifications d'erreur** : pour chaque workflow importé, juste à côté du bouton **"Active"** (Published), cliquer sur le **bouton à gauche** → **"Set up error notifications"** → choisir **Techwatch Error Workflow**. À faire pour **tous les workflows**.
+
+4. Configurer les **Credentials** (menu gauche → "Credentials" → "Add credential") :
 
    **Claude API** (obligatoire)
-   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → créer un compte → "API Keys" → créer une clé (`sk-ant-...`)
+   - Aller sur **[console.anthropic.com](https://console.anthropic.com)** → se connecter ou créer un compte → "API Keys" → créer une clé (`sk-ant-...`)
    - Dans n8n : type **"Header Auth"** → Header Name : `x-api-key` → Value : votre clé Claude
    - Nommer exactement : `Clé API Claude`
 
@@ -236,8 +240,8 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
    **Gmail** (optionnel — alertes email)
    - Dans n8n : type "Google OAuth2" → suivre les instructions d'autorisation
 
-4. **Mettre à jour les URLs Supabase** : dans chaque node HTTP Request pointant vers Supabase, remplacer `YOUR_PROJECT_ID` par votre vrai project ID
-5. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
+5. **Mettre à jour les URLs Supabase** : dans chaque node HTTP Request pointant vers Supabase, remplacer `YOUR_PROJECT_ID` par votre vrai project ID
+6. Cliquer **"Save"** puis activer le workflow (toggle en haut à droite)
 
 ---
 
@@ -299,10 +303,10 @@ tech-watch-dashboard/
 
 ### Adapter les newsletters
 
-Le workflow inclut des branches prédéfinies pour traiter des newsletters spécifiques (ZoneBourse, Aktionnaire, MoneyRadar) dans la **Zone IA & Nettoyage**. Chaque newsletter a sa propre branche : Cleaner Email → Claude API → Parser Newsletter.
+Le workflow inclut des branches prédéfinies pour traiter des newsletters spécifiques (ZoneBourse, Aktionnaire, MoneyRadar). Ces branches sont celles **reliées au nœud Gmail (newsletters)**, juste en dessous de la section **"Zone IA & Nettoyage"**. Chaque newsletter a sa propre branche : Cleaner Email → Claude API → Parser Newsletter.
 
 Pour adapter à vos propres newsletters :
-1. Dans n8n → ouvrir le workflow → repérer la section **"Zone IA & Nettoyage"**
+1. Dans n8n → ouvrir le workflow → repérer les branches connectées au **nœud Gmail newsletters** (sous la section "Zone IA & Nettoyage")
 2. Dupliquer une branche newsletter existante
 3. Modifier le **Gmail Trigger** pour cibler votre newsletter (filtre par expéditeur ou objet)
 4. Adapter le prompt dans le node **Claude API** à votre newsletter
