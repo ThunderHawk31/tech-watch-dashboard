@@ -1,0 +1,2044 @@
+﻿{
+  "name": "Analyseur Article Finance-Auto RSS",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 4000,\n  messages: [{\n    role: \"user\",\n    content:\"Tu es un analyste financier expert. Analyse l'article suivant et réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans backticks.\\n\\nArticle :\\n\" + $json.content + \"\\n\\nFormat JSON attendu (respecte exactement ces clés) :\\n{\\n  \\\"titre\\\": \\\"Titre en français, max 80 caractères\\\",\\n  \\\"titre_en\\\": \\\"Original title in English\\\",\\n  \\\"secteur\\\": \\\"IA | Finance | Crypto | Tech | Cybersécurité | Énergie | Santé | Immobilier | Autre\\\",\\n  \\\"resume\\\": \\\"3-4 phrases de résumé exécutif\\\",\\n  \\\"points_cles\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n  \\\"impact_marches\\\": \\\"Secteurs concernés, actions/entreprises mentionnées, tendances identifiées\\\",\\n  \\\"opportunites\\\": \\\"Opportunités d'investissement potentielles et risques à surveiller\\\",\\n  \\\"tickers\\\": [\\\"NVDA\\\", \\\"AAPL\\\"],\\n  \\\"importance\\\": 3,\\n  \\\"sentiment\\\": \\\"Positif\\\"\\n}\\n\\nRègles strictes :\\n- titre : traduction française, max 80 caractères\\n- secteur : UNE seule valeur exacte parmi la liste\\n- tickers : tableau de tickers boursiers réels uniquement (2-5 majuscules), max 5, [] si aucun. Exclure : IA, AI, ML, LLM, GPU, CPU, USA, UK, UE, PDG, CEO, CFO, CTO, USD, EUR, GBP, CAC, DOW, ETF, IPO, LLC, INC, SA, NV, AG, RSI, MACD, SMA, GDP, ROI, PIB, PME, SEC, DOJ, FBI, ICE, NASA, NFL, CHIPS, II, III, IV, S, B, A, C, Y, EN\\n- importance : entier 1 à 5, critères stricts :\\n  * 1 : bruit de fond, aucun impact marché identifiable\\n  * 2 : info sectorielle mineure, tendance faible, levée de fonds < 50M$\\n  * 3 : news notable, levée de fonds 50-500M$, annonce produit d'un acteur majeur\\n  * 4 : impact significatif sur un secteur entier, mouvement de marché >3%, faille critique exploitée activement, acquisition >1Md$, décision réglementaire majeure\\n  * 5 : événement systémique uniquement — crash, crise géopolitique majeure, faillite d'un acteur systémique, vulnérabilité zero-day sur infrastructure critique mondiale\\n- sentiment : exactement \\\"Positif\\\", \\\"Négatif\\\" ou \\\"Neutre\\\"\\n- Répondre UNIQUEMENT avec le JSON, rien d'autre\"}]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        864
+      ],
+      "id": "0a2c1a5c-2a69-4cc0-b6f3-b8b387d44e95",
+      "name": "API Claude",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const httpResponse = $node[\"HTTP Request Article\"].json;\nlet html = httpResponse.data || httpResponse.body || httpResponse;\n\nlet originalUrl = $node[\"Recup flux RSS\"].json.url || '';\n\nconsole.log('✅ URL récupérée:', originalUrl);\n\nif (typeof html === 'object') {\n  html = html.data || html.body || Object.values(html).find(v => typeof v === 'string' && v.length > 100) || '';\n}\n\nconsole.log('Type de HTML:', typeof html);\nconsole.log('Longueur HTML:', html.length);\n\nfunction stripHtml(htmlContent) {\n  if (!htmlContent || typeof htmlContent !== 'string') return '';\n  let text = htmlContent.replace(/<script[^>]*>.*?<\\/script>/gis, '');\n  text = text.replace(/<style[^>]*>.*?<\\/style>/gis, '');\n  text = text.replace(/<[^>]+>/g, ' ');\n  text = text.replace(/\\s+/g, ' ');\n  text = text.replace(/&nbsp;/g, ' ');\n  text = text.replace(/&amp;/g, '&');\n  text = text.replace(/&lt;/g, '<');\n  text = text.replace(/&gt;/g, '>');\n  text = text.replace(/&quot;/g, '\"');\n  text = text.replace(/&#39;/g, \"'\");\n  return text.trim();\n}\n\nconst cleanText = stripHtml(html);\nconst truncatedText = cleanText.substring(0, 10000);\n\nconsole.log('Texte nettoyé, longueur:', truncatedText.length);\nconsole.log('Premiers 100 caractères:', truncatedText.substring(0, 100));\n\nreturn {\n  json: {\n    url: originalUrl,\n    content: truncatedText,\n    contentLength: truncatedText.length,\n    hasContent: truncatedText.length > 100\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        800
+      ],
+      "id": "84d0f171-d3b0-4239-a153-302e6ad2b73b",
+      "name": "Cleaner HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const claudeResponse = $input.first().json;\nconst tokensUsed = (claudeResponse.usage?.input_tokens || 0) + (claudeResponse.usage?.output_tokens || 0);\n\nlet rawText = claudeResponse.content?.[0]?.text || '';\n\n// Nettoyage au cas où Claude ajoute des backticks malgré la consigne\nconst clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(clean);\n} catch (e) {\n  console.log('❌ JSON parse error:', e.message);\n  console.log('Raw:', rawText.substring(0, 200));\n  // Retourne un objet vide → sera filtré par If(article vide)\n  return { json: { titre: '', importance: 0 } };\n}\n\nconst tickers = Array.isArray(parsed.tickers)\n  ? parsed.tickers.join(',')\n  : (parsed.tickers || '');\n\nconsole.log('✅ Parsed:', parsed.titre, '| Secteur:', parsed.secteur, '| Importance:', parsed.importance);\n\nreturn {\n  json: {\n    url: $node[\"Cleaner HTML\"].json.url || 'URL non disponible',\n    date: new Date().toISOString(),\n    titre: parsed.titre || '',\n    titre_en: parsed.titre_en || '',\n    secteur: parsed.secteur || 'Non défini',\n    importance: parseInt(parsed.importance) || 0,\n    sentiment: parsed.sentiment || 'Neutre',\n    tickers,\n    analysis: clean, // stocke le JSON brut — rétrocompat React\n    model: claudeResponse.model || 'claude-sonnet-4',\n    tokens_used: tokensUsed,\n    original_title: $node[\"Recup flux RSS\"].json.title || '',\n    // Champs structurés pour le futur\n    resume: parsed.resume || '',\n    points_cles: parsed.points_cles || [],\n    impact_marches: parsed.impact_marches || '',\n    opportunites: parsed.opportunites || '',\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        896
+      ],
+      "id": "4f9fa2e3-e9fe-4377-967e-c0c9308b03ed",
+      "name": "reponse de claude api"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gestion des erreurs — si le flux RSS a échoué, on skip\nconst input = $input.first().json;\nif (input.error || input.statusCode === 404 || input.statusCode >= 400) {\n  console.log('⚠️ Flux RSS en erreur, skip:', input.url || 'URL inconnue');\n  return [];\n}\n\n// Récupérer le flux RSS brut\nconst response = input;\nlet rssText = response.body || response.data || response['data '] || '';\n\nif (typeof rssText === 'object') {\n  rssText = JSON.stringify(rssText);\n}\n\nif (!rssText || rssText.length < 50) {\n  console.log('⚠️ Flux RSS vide ou trop court, skip');\n  return [];\n}\n\nfunction extract(text, tag) {\n  const regex = new RegExp(`<${tag}[^>]*>([\\\\s\\\\S]*?)<\\\\/${tag}>`, 'gi');\n  const matches = [];\n  let match;\n  while ((match = regex.exec(text)) !== null) {\n    matches.push(match[1]);\n  }\n  return matches;\n}\n\nfunction cleanText(text) {\n  return text\n    .replace(/<!\\\\[CDATA\\\\[(.*?)\\\\]\\\\]>/gs, '$1')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&amp;/g, '&')\n    .replace(/&quot;/g, '\"')\n    .replace(/&apos;/g, \"'\")\n    .replace(/&#39;/g, \"'\")\n    .trim();\n}\n\nconst items = extract(rssText, 'item');\n\nconsole.log(`${items.length} articles trouvés dans le flux RSS`);\n\nif (items.length === 0) {\n  console.log('Aucun article trouvé, skip');\n  return [];\n}\n\nconst articles = items.map(itemText => {\n  const titles = extract(itemText, 'title');\n  const links = extract(itemText, 'link');\n  const pubDates = extract(itemText, 'pubDate');\n  const descriptions = extract(itemText, 'description');\n  \n  return {\n    title: cleanText(titles[0] || ''),\n    url: cleanText(links[0] || ''),\n    pubDate: cleanText(pubDates[0] || ''),\n    description: cleanText(descriptions[0] || '')\n  };\n});\n\n// Filtrer les articles récents (dernières 12h)\nconst now = new Date();\nconst twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);\n\nconst recentArticles = articles.filter(article => {\n  if (!article.pubDate) return true;\n  try {\n    const pubDate = new Date(article.pubDate);\n    return pubDate >= twelveHoursAgo;\n  } catch (e) {\n    return true;\n  }\n});\n\nconsole.log(`${recentArticles.length} articles récents`);\n\nif (recentArticles.length === 0 && articles.length > 0) {\n  console.log('Aucun article récent, on prend les 3 premiers');\n  return articles.slice(0, 3).map(a => ({ \n    json: { url: a.url, title: a.title, description: a.description }\n  }));\n}\n// Si 0 articles trouvés → flag pour alerte\nif (items.length === 0) {\n  return [{ \n    json: { \n      _fluxMort: true, \n      url: input.url || 'URL inconnue',\n      source: input.source || 'Source inconnue'\n    } \n  }];\n}\n// Entités VIP — jamais éjectées par le cap à 3\n// Charger toutes les entités VIP (un item par entité)\nconst VIP_ENTITIES = $items(\"Charger entités VIP\")\n  .map(i => i.json.name.toLowerCase());\n\nfunction isVIP(article) {\n  const text = (article.title + ' ' + article.description).toLowerCase();\n  return VIP_ENTITIES.some(e => text.includes(e));\n}\n\nconst vipArticles = recentArticles.filter(isVIP);\nconst nonVipArticles = recentArticles.filter(a => !isVIP(a));\n\n// Diversité par entité : max 3 articles par entité VIP\nconst entityCount = {};\nconst diverseVipArticles = [];\n\nfor (const article of vipArticles) {\n  const text = (article.title + ' ' + article.description).toLowerCase();\n  const primaryEntity = VIP_ENTITIES.find(e => text.includes(e)) || 'other';\n  entityCount[primaryEntity] = (entityCount[primaryEntity] || 0) + 1;\n  if (entityCount[primaryEntity] <= 3) {\n    diverseVipArticles.push(article);\n  }\n}\n\n// Identifier la source courante\nconst currentSource = ($node[\"fetch source RSS\"]?.json?.source || \n                       $input.first().json?.source || '').toLowerCase();\nconst isTechCrunch = currentSource.includes('techcrunch');\n\n// Cap TechCrunch à 1 article par run\nconst maxArticles = isTechCrunch ? 1 : 3;\n\nconst capped = [...diverseVipArticles, ...nonVipArticles.slice(0, maxArticles)];\n\nreturn capped.map(article => ({\n  json: {\n    url: article.url,\n    title: article.title\n      .replace(/&#8217;/g, \"'\")\n      .replace(/&#8216;/g, \"'\")\n      .replace(/&#8220;/g, '\"')\n      .replace(/&#8221;/g, '\"'),\n    description: article.description,\n    source: currentSource  // ← ajout pour traçabilité\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2032,
+        816
+      ],
+      "id": "78106363-6b7e-42d6-9859-3466803acd3c",
+      "name": "Recup flux RSS"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "fr-FR,fr;q=0.9,en;q=0.8"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1520,
+        832
+      ],
+      "id": "f39ed84a-c9c8-4d7b-9385-f5978a0aa1a1",
+      "name": "HTTP Request Article"
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json;\n\nconst htmlBody = email.html || email.textHtml || '';\nconst subject = email.subject || 'Newsletter Zonebourse';\nconst date = email.date || new Date().toISOString();\n\n// Nettoyer le HTML → texte (version améliorée)\nconst cleanText = htmlBody\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<\\/?(p|div|tr|li|h[1-6])[^>]*>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/&quot;/g, '\"')\n  .replace(/&#39;/g, \"'\")\n  .replace(/&eacute;/g, 'é').replace(/&egrave;/g, 'è')\n  .replace(/&agrave;/g, 'à').replace(/&ccedil;/g, 'ç')\n  .replace(/&ucirc;/g, 'û').replace(/&ocirc;/g, 'ô')\n  .replace(/&iuml;/g, 'ï').replace(/&rsquo;/g, \"'\")\n  .replace(/&lsquo;/g, \"'\").replace(/&rdquo;/g, '\"')\n  .replace(/&ldquo;/g, '\"').replace(/&ndash;/g, '–')\n  .replace(/&mdash;/g, '—').replace(/&frac34;/g, '¾')\n  .replace(/&[a-z]+;/gi, '')\n  // NOUVEAU : nettoyer les espaces multiples et indentations\n  .replace(/[ \\t]+/g, ' ')         // espaces/tabs multiples → 1 espace\n  .replace(/ *\\n */g, '\\n')        // espaces autour des sauts de ligne\n  .replace(/\\n{3,}/g, '\\n\\n')      // max 2 sauts de ligne\n  .trim();\n\n// Extraire les URLs — cherche aussi dans les redirects Mailjet\nconst urlRegex = /href=[\"'](https?:\\/\\/[^\"']*zonebourse\\.com[^\"']*|http[^\"']*mjt\\.lu\\/lnk\\/[^\"']*)['\"]/gi;\nconst urls = [];\nlet match;\nwhile ((match = urlRegex.exec(htmlBody)) !== null) {\n  const url = match[1];\n  if (!url.includes('unsubscribe') && !url.includes('desinscription') && !url.includes('contact') && !urls.includes(url)) {\n    urls.push(url);\n  }\n}\n\nconsole.log(`✅ Email Zonebourse nettoyé`);\nconsole.log(`   Sujet: ${subject}`);\nconsole.log(`   Texte: ${cleanText.length} caractères`);\nconsole.log(`   URLs: ${urls.length}`);\n\n// 4. On limite le texte à 8000 caractères pour ne pas exploser\n// le contexte de Claude (et donc le coût en tokens)\nreturn {\n  json: {\n    subject,\n    date,\n    cleanText: cleanText.substring(0, 8000),\n    zonebourseUrls: urls.slice(0, 20),\n    source: 'zonebourse-newsletter'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2608,
+        1328
+      ],
+      "id": "249a3a38-e99d-40c1-9464-97f4bed7d232",
+      "name": "Cleaner Email Zonebourse"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================================\n// NOEUD: Parser Newsletter Zonebourse\n// ========================================================\n// RÔLE: Transformer la réponse Claude (texte brut avec\n// plusieurs articles séparés par ---ARTICLE---) en\n// objets individuels au même format que la branche RSS.\n//\n// POURQUOI: Claude retourne UN SEUL bloc de texte qui\n// contient l'analyse de TOUS les articles de la newsletter.\n// On doit le découper pour que chaque article soit traité\n// individuellement (1 article = 1 ligne Google Sheets).\n//\n// FORMAT DE SORTIE: Identique au node \"reponse de claude api\"\n// → { url, date, titre, secteur, importance, sentiment, tickers, analysis, tokens_used }\n// Comme ça le node \"If\" et \"Google Sheets\" qui suivent\n// n'ont pas besoin d'être modifiés.\n// ========================================================\n\nconst claudeResponse = $input.first().json;\nconst tokensUsed = (claudeResponse.usage?.input_tokens || 0) + (claudeResponse.usage?.output_tokens || 0);\n\nlet rawText = claudeResponse.content?.[0]?.text || '';\nconst clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(clean);\n} catch (e) {\n  console.log('❌ JSON parse error:', e.message);\n  return [{ json: { titre: '', importance: 0 } }];\n}\n\n// Détermine la source selon le nœud Cleaner qui précède\nfunction getNodeJson(name) {\n  try { return $node[name]?.json || null; }\n  catch(e) { return null; }\n}\n\nconst emailData =\n  getNodeJson('Cleaner Email Aktionnaire') ||\n  getNodeJson('Cleaner Email Zonebourse') ||\n  getNodeJson('Cleaner Email MoneyRadar Crypto') ||\n  {};\nconst newsletterDate = emailData.date || new Date().toISOString();\nconst dateStr = newsletterDate.split('T')[0];\nconst source = emailData.source || 'newsletter';\n\nconst tickers = Array.isArray(parsed.tickers)\n  ? parsed.tickers.join(',')\n  : (parsed.tickers || '');\n\nconsole.log(`✅ ${source} | ${parsed.titre} | ${parsed.importance}/5 | ${parsed.sentiment}`);\n\nreturn [{\n  json: {\n    url: `https://newsletter.techwatch.fr/${source}/${dateStr}`,\n    date: newsletterDate,\n    titre: parsed.titre || '',\n    titre_en: parsed.titre_en || '',\n    secteur: parsed.secteur || 'Finance',\n    importance: parseInt(parsed.importance) || 0,\n    sentiment: parsed.sentiment || 'Neutre',\n    tickers,\n    analysis: clean,\n    resume: parsed.resume || '',\n    points_cles: parsed.points_cles || [],\n    impact_marches: parsed.impact_marches || '',\n    opportunites: parsed.opportunites || '',\n    model: claudeResponse.model || 'claude-sonnet-4',\n    tokens_used: tokensUsed,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2080,
+        1328
+      ],
+      "id": "cff7d287-f25d-469b-8c04-d396e59d9f82",
+      "name": "Parser Newsletter Zonebourse"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { url: \"https://techcrunch.com/feed/\", source: \"TechCrunch\" } },\n  { json: { url: \"https://www.oreilly.com/radar/feed/\", source: \"O'Reilly\" } },\n{ json: { url: \"https://feeds.feedburner.com/TheHackersNews\", source: \"TheHackerNews\" } },\n  { json: { url: \"https://coindesk.com/arc/outboundfeeds/rss/\", source: \"CoinDesk\" } },\n  { json: { url: \"https://huggingface.co/blog/feed.xml\", source: \"HuggingFace\" } },\n  { json: { url: \"https://services.lesechos.fr/rss/les-echos-finance-marches.xml\", source: \"Les Echos\" } },\n  { json: { url: \"https://www.cert.ssi.gouv.fr/feed/\", source: \"CERT-FR\" } },\n  { json: { url: \"https://feeds.arstechnica.com/arstechnica/index\", source: \"Ars Technica\" } },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2416,
+        816
+      ],
+      "id": "51b11834-6ae4-4049-839f-f981efb36f7b",
+      "name": "Source RSS",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyWeek",
+              "hour": 22,
+              "weekday": "5"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "readStatus": "unread",
+          "sender": "ZoneBourse, list:(<noreply.zonebourse.com.xgsmz-5hl2w.mj>)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3040,
+        1328
+      ],
+      "id": "574d2b94-fb60-42e8-9173-35512f96e662",
+      "name": "Gmail Trigger Zonebourse",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "on_conflict",
+              "value": "url"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=ignore-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "name": "published_at",
+              "value": "={{ $json.published_at }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.url }}"
+            },
+            {
+              "name": "analysis",
+              "value": "={{ $json.analysis }}"
+            },
+            {
+              "name": "importance",
+              "value": "={{ $json.importance }}"
+            },
+            {
+              "name": "sentiment",
+              "value": "={{ $json.sentiment }}"
+            },
+            {
+              "name": "tickers",
+              "value": "={{ $json.tickers }}"
+            },
+            {
+              "name": "sector",
+              "value": "={{ $json.sector }}"
+            },
+            {
+              "name": "tokens",
+              "value": "={{ $json.tokens }}"
+            },
+            {
+              "name": "title_en",
+              "value": "={{ $json.title_en }}"
+            },
+            {
+              "name": "original_title",
+              "value": "={{ $json.original_title }}"
+            },
+            {
+              "name": "impact_marches",
+              "value": "={{ $json.impact_marches || '' }}"
+            },
+            {
+              "name": "opportunites",
+              "value": "={{ $json.opportunites || '' }}"
+            },
+            {
+              "name": "points_cles",
+              "value": "={{ JSON.stringify($json.points_cles || []) }}"
+            },
+            {
+              "name": "source_count",
+              "value": "={{ $json.source_count }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2768,
+        816
+      ],
+      "id": "3780d79d-2b9f-4354-b073-02215770eb99",
+      "name": "Insert Supabase",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $input.item.json;\n\nreturn {\n  json: {\n    title: data.titre || '',\n    published_at: data.date || new Date().toISOString(),\n    url: data.url || '',\n    analysis: data.analysis || '',\n    importance: parseInt(data.importance) || 0,\n    sentiment: data.sentiment || '',\n    tickers: data.tickers || '',\n    sector: data.secteur || '',\n    tokens: parseInt(data.tokens_used) || 0,\n    title_en: data.title_en || '',\n    original_title: data.original_title || '',\n    source_count: 1,\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        816
+      ],
+      "id": "302ebe76-748e-4965-8225-282859cfbd06",
+      "name": "Mapper Supabase"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "50902ce9-4f13-4d8b-bfad-99e4f0e1e15b",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1056,
+        848
+      ],
+      "id": "17063dc7-ac6c-423f-a82d-eedd6a480be1",
+      "name": "If (doublon)"
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles?url=eq.{{ encodeURIComponent($json.url) }}&select=url",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1296,
+        832
+      ],
+      "id": "14e9ac1e-64b0-4b96-a651-4efd440a9d6e",
+      "name": "Check Doublon",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xCjicFQrWIVRxmrW",
+          "name": "Clé Anon Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "124e6363-9fca-41d8-8444-7d9f38cb2cfd",
+              "leftValue": "={{ $json.hasContent }} ",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        816
+      ],
+      "id": "82e8bed8-110b-4c4d-b9d1-85318b682fe6",
+      "name": "If (contenu HTML)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bdfb8cd3-3413-4aad-a62e-6ae5d6332947",
+              "leftValue": "={{ $json.importance }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1463ed53-0ca5-4e03-b6b1-fc85f310bc6a",
+              "leftValue": "={{ $json.titre }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1264,
+        896
+      ],
+      "id": "c0c7d0f3-5283-45ce-93f9-e2f8993f9a52",
+      "name": "If(article vide)"
+    },
+    {
+      "parameters": {
+        "sendTo": "nolanfirstiron@gmail.com",
+        "subject": "=⚠️ TechWatch — Flux RSS mort : {{ $json.source }}",
+        "message": "=Le flux {{ $json.url }} n'a retourné aucun article. Vérifier si l'URL est toujours valide.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1248,
+        176
+      ],
+      "id": "890b4892-ab7f-484d-af38-27f5ffef5ae7",
+      "name": "Message Flux Mort",
+      "webhookId": "4b17dc04-d43a-4d1d-8737-2643aca5dd7a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "original_title,sector,analysis"
+            },
+            {
+              "name": "published_at",
+              "value": "=gte.{{ new Date(Date.now() - 40*3600*1000).toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -816,
+        832
+      ],
+      "id": "3d00e63c-ad09-4304-b9e1-36d5f4bee2a0",
+      "name": "HTTP Request Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xCjicFQrWIVRxmrW",
+          "name": "Clé Anon Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c68e5c73-009b-449e-9cf0-01e0b4237de2",
+              "leftValue": "={{ $json._fluxMort }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1792,
+        816
+      ],
+      "id": "081aa971-90d8-4986-8bc8-457d01e9274e",
+      "name": "If (flux Mort)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ae64981e-d448-4f3c-aaca-ee1196f6544b",
+              "leftValue": "={{ $json.jaccardZoneGrise }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        832
+      ],
+      "id": "8342f211-4a98-4859-be9e-bc34da9cec92",
+      "name": "If (zone grise)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 80,\n  messages: [{\n    role: \"user\",\n    content: \"Article en base :\\nTitre : \\\"\" + $json.bestMatchTitle + \"\\\"\\nRésumé : \\\"\" + $json.bestMatchResume + \"\\\"\\n\\nNouvel article :\\nTitre : \\\"\" + $json.title + \"\\\"\\n\\nCes deux articles couvrent-ils exactement le même événement avec le même angle ?\\nRéponds UNIQUEMENT par :\\nDOUBLON: oui\\nou\\nDOUBLON: non\"\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        32,
+        176
+      ],
+      "id": "71f7a5ce-95b8-4371-860a-a68fa22b5612",
+      "name": "HTTP Request Claude",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "92d87cc6-145e-42f5-96c0-63cb1030da47",
+              "leftValue": "={{ $json.jaccardSkip }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -384,
+        784
+      ],
+      "id": "f9b30b6c-1777-4efd-b030-fb0474bfcd48",
+      "name": "If (skip direct)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const verdict = $input.first().json.content?.[0]?.text?.trim() || '';\nconst isDuplicate = verdict.toLowerCase().includes('doublon: oui');\nconsole.log(`Claude verdict: \"${verdict}\"`);\nreturn { json: { ...$node[\"Code Jaccard (calcul pur)\"].json, claudeIsDuplicate: isDuplicate } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        176
+      ],
+      "id": "bee17efe-e8c6-47e6-9766-bfb21f5b8aa9",
+      "name": "Code (parse verdict Claude)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e506cf4e-568b-4ad9-affb-a6c52e9a6ac9",
+              "leftValue": "={{ $json.claudeIsDuplicate }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        464,
+        176
+      ],
+      "id": "d5637865-8e72-4e5b-9656-c6c7316433c6",
+      "name": "If (doublon confirmé par Claude)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// NODE : Code Jaccard — Déduplication sémantique sur titres\n// Fenêtre : 40h | Seuils : > 0.65 skip / 0.4-0.65 zone grise\n// Compare original_title (anglais) vs original_title en base\n// ============================================================\n\n// Titre brut anglais du nouvel article (depuis Recup flux RSS)\nconst currentTitle = $node[\"Recup flux RSS\"].json.title || '';\n\n// Articles récents récupérés par le node HTTP Request Supabase\nconst recentArticles = $input.all().map(i => i.json);\n\n// 1. Normalisation\nfunction normalize(t) {\n  if (!t) return '';\n  return t.toLowerCase()\n    .replace(/[^a-z0-9\\s]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length > 3)\n    .sort()\n    .join(' ');\n}\n\n// 2. Score Jaccard\nfunction jaccard(a, b) {\n  if (!a || !b) return 0;\n  const setA = new Set(a.split(' '));\n  const setB = new Set(b.split(' '));\n  const inter = [...setA].filter(x => setB.has(x));\n  const union = new Set([...setA, ...setB]);\n  return union.size === 0 ? 0 : inter.size / union.size;\n}\n\n// 3. Extraire résumé exécutif (pour zone grise Claude)\nfunction extractResume(analysis) {\n  if (!analysis) return '';\n  const match = analysis.match(/RÉSUMÉ EXÉCUTIF[\\s\\S]*?\\n([\\s\\S]*?)(?=\\n#|\\n\\n\\n|$)/i);\n  return match ? match[1].trim().substring(0, 400) : analysis.substring(0, 400);\n}\n\n// 4. Si pas d'articles récents → on laisse passer\nif (!recentArticles || recentArticles.length === 0) {\n  console.log('Aucun article récent en base, pas de check similarité');\n  return { json: { ...$node[\"Recup flux RSS\"].json, jaccardScore: 0, jaccardSkip: false, jaccardZoneGrise: false } };\n}\n\n// 5. Calcul Jaccard sur tous les articles récents\nconst normCurrent = normalize(currentTitle);\nlet bestScore = 0;\nlet bestMatch = null;\n\nfor (const article of recentArticles) {\n  // Utilise original_title (anglais) pour comparer avec le titre RSS anglais entrant\n  const score = jaccard(normCurrent, normalize(article.original_title || ''));\n  if (score > bestScore) {\n    bestScore = score;\n    bestMatch = article;\n  }\n}\n\nconsole.log(`Jaccard max: ${bestScore.toFixed(2)} | \"${currentTitle.substring(0, 60)}\"`);\nif (bestMatch) console.log(`Meilleur match: \"${(bestMatch.original_title || '').substring(0, 60)}\"`);\n\n// 6. Résultat\nreturn {\n  json: {\n    ...$node[\"Recup flux RSS\"].json,\n    jaccardScore: bestScore,\n    jaccardSkip: bestScore > 0.65,\n    jaccardZoneGrise: bestScore >= 0.4 && bestScore <= 0.65,\n    bestMatchTitle: bestMatch?.original_title || '',\n    bestMatchSector: bestMatch?.sector || '',\n    bestMatchResume: extractResume(bestMatch?.analysis),\n    bestMatchUrl: bestMatch?.url || '',\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        816
+      ],
+      "id": "a7914152-b0b1-4f62-b0bf-9710fbd997dd",
+      "name": "Code Jaccard (calcul pur)"
+    },
+    {
+      "parameters": {
+        "content": "## Zone Sources\n SOURCES — Déclencheurs & Ingestion\\nRSS (8 feeds, 10h30/18h30)",
+        "height": 272,
+        "width": 1108,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3024,
+        720
+      ],
+      "id": "c81a7a75-d128-4783-9861-c224e81ac5e7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "##  Zone Filtrage\nFILTRAGE — Déduplication\\nCheck doublon URL\\nJaccard sur 40h (seuil 0.65)\\nZone grise → Claude",
+        "height": 368,
+        "width": 1600
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        656
+      ],
+      "id": "048e2f34-c2f2-43d1-9594-fb0a19aa686c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Zone IA & Nettoyage \nIA & NETTOYAGE \nCleaner HTML Claude API (analyse + tickers + titre EN) Parser Newsletter",
+        "height": 432,
+        "width": 1264,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        288,
+        704
+      ],
+      "id": "5e61717a-e8fa-4c6b-b7f8-096eac8baa9b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Zone Sources\n SOURCES — Déclencheurs & Ingestion\\nRSS (6 feeds, 10h30/18h30)",
+        "height": 736,
+        "width": 384,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3072,
+        1232
+      ],
+      "id": "4b39d5ac-987f-45e8-a037-991a45dfae84",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Zone Filtrage \nFILTRAGE — Déduplication\\nCheck doublon URL\\nJaccard sur 40h (seuil 0.65)\\nZone grise → Claude",
+        "height": 224,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        80
+      ],
+      "id": "f0038d37-505a-4edd-b2e9-db133f275b60",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Zone IA & Nettoyage \nIA & NETTOYAGE \nCleaner HTML Claude API (analyse + tickers + titre EN) Parser Newsletter",
+        "height": 752,
+        "width": 800,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2672,
+        1232
+      ],
+      "id": "c4ef40d5-dbf7-4cbf-bba7-1b7bae7e8ae7",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Zone DESTINATION\n DESTINATION — Supabase Mapper + Insert Alerte Gmail si importance ≥ 4",
+        "height": 336,
+        "width": 544,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        672
+      ],
+      "id": "32a164df-4b88-4b50-9112-17a4d286c726",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Zone Destination\nDESTINATION — Supabase\\nMapper + Insert\\nAlerte Gmail si importance ≥ 4",
+        "height": 272,
+        "width": 272,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        176
+      ],
+      "id": "d0eab634-9664-4a2b-bcc0-2da4fc18bcee",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 30 10,18 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 0 3 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2992,
+        816
+      ],
+      "id": "8b0e0640-5059-43e7-b0f0-9ef4128346ec",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "nolanfirstiron@gmail.com",
+        "subject": "={{ $json.watchlistMatch ? '📌 TechWatch — Watchlist : ' + $json.watchlistTicker + ' (' + $json.importance + '/5)' : $json.haikuConfirmed === true ? '🚨 TechWatch — Systémique confirmé (5/5)' : $json.haikuConfirmed === false ? '⚠️ TechWatch — À vérifier (5/5)' : '⚡ TechWatch 🚨 Article Important (' + $json.importance + '/5)' }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <link href=\"https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">\n</head>\n<body style=\"margin:0; padding:0; background-color:#000;\">\n\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse:collapse; max-width:480px; background-color:#0f0f0f; border-radius:12px; border:1px solid #222; font-family:'DM Sans', Arial, sans-serif; color:#e8e8e8;\">\n  <tbody>\n\n  <tr>\n    <td style=\"padding:24px 24px 0 24px; border-bottom:1px solid #1e1e1e;\">\n      <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse:collapse;\">\n        <tr>\n          <td style=\"padding-bottom:10px;\">\n            <span style=\"font-family:'DM Mono', monospace; font-size:11px; color:#666; text-transform:uppercase; letter-spacing:1.5px;\">TechWatch · Alerte</span>\n            &nbsp;<span style=\"display:inline-block; background:#f59e0b; width:6px; height:6px; border-radius:50%; vertical-align:middle;\"></span>\n          </td>\n        </tr>\n        <tr>\n          <td style=\"padding-bottom:20px;\">\n            <span style=\"font-size:17px; font-weight:600; color:#fff; letter-spacing:-0.2px; line-height:1.4;\">Article à fort impact détecté</span>\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:4px 24px 4px 24px;\">\n      <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse:collapse;\">\n        <tr>\n  <td style=\"padding:9px 0; color:#555; font-size:12px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.8px; width:110px;\">Source</td>\n  <td style=\"padding:9px 0; color:#a3a3a3; font-size:13px; font-family:'DM Mono',monospace;\">{{ $json.url.replace(/^https?:\\/\\/(www\\.)?/, '').split('/')[0] }}</td>\n</tr>\n        <tr style=\"border-top:1px solid #1a1a1a;\">\n          <td style=\"padding:9px 0; color:#555; font-size:12px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.8px;\">Importance</td>\n          <td style=\"padding:9px 0; color:#f59e0b; font-size:18px; line-height:1;\">{{ '★'.repeat($json.importance) + '☆'.repeat(5 - $json.importance) }} <span style=\"color:#666; font-size:12px; vertical-align:middle;\">{{ $json.importance }}/5</span></td>\n        </tr>\n        <tr style=\"border-top:1px solid #1a1a1a;\">\n          <td style=\"padding:9px 0; color:#555; font-size:12px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.8px;\">🌐 Secteur</td>\n          <td style=\"padding:9px 0; color:#e8e8e8; font-size:14px; font-weight:500;\">{{ $json.secteur }}</td>\n        </tr>\n        <tr style=\"border-top:1px solid #1a1a1a;\">\n          <td style=\"padding:9px 0; color:#555; font-size:12px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.8px;\">📊 Sentiment</td>\n          <td style=\"padding:9px 0; font-size:14px; font-weight:500; color:{{ $json.sentiment === 'Positif' ? '#22c55e' : $json.sentiment === 'Négatif' ? '#ef4444' : '#a3a3a3' }};\">{{ $json.sentiment }}</td>\n        </tr>\n        <tr style=\"border-top:1px solid #1a1a1a;\">\n          <td style=\"padding:9px 0; color:#555; font-size:12px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.8px;\">📈 Actions</td>\n          <td style=\"padding:9px 0; font-family:'DM Mono',monospace; font-size:13px; color:#a3a3a3;\">{{ $json.tickers || '—' }}</td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:4px 24px 20px 24px;\">\n      <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"border-collapse:collapse; background:#161616; border-radius:8px; border-left:3px solid #f59e0b;\">\n        <tr>\n          <td style=\"padding:14px 16px; color:#c4c4c4; font-size:13.5px; line-height:1.6; font-weight:300;\">\n            {{ $json.resume || $json.analysis?.substring(0, 300) }}\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:0 24px 10px 24px;\">\n      <a href=\"https://techwatch.fr\" target=\"_blank\" style=\"display:block; background:#fff; color:#0f0f0f; padding:11px 0; text-decoration:none; border-radius:7px; font-weight:600; font-size:13px; text-align:center; letter-spacing:0.2px; font-family:'DM Sans',Arial,sans-serif;\">\n        Analyse TechWatch →\n      </a>\n    </td>\n  </tr>\n\n  <tr>\n    <td style=\"padding:0 24px 24px 24px;\">\n      <a href=\"{{ $json.url }}\" target=\"_blank\" style=\"display:block; background:transparent; color:#a3a3a3; padding:11px 0; text-decoration:none; border-radius:7px; font-weight:500; font-size:13px; text-align:center; letter-spacing:0.2px; border:1px solid #2a2a2a; font-family:'DM Sans',Arial,sans-serif;\">\n        Article original ↗\n      </a>\n    </td>\n  </tr>\n\n  </tbody>\n</table>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2560,
+        288
+      ],
+      "id": "f723ef58-8bf3-4ffe-871a-a1bc026c39c1",
+      "name": "Send a message (importance)",
+      "webhookId": "0c581124-c245-429d-a6cc-e59d1a4a431f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json;\n\n// Recherche récursive du HTML dans les parts\nfunction decodeBase64Utf8(data) {\n  const binary = atob(data.replace(/-/g, '+').replace(/_/g, '/'));\n  const bytes = new Uint8Array(binary.length);\n  for (let i = 0; i < binary.length; i++) {\n    bytes[i] = binary.charCodeAt(i);\n  }\n  return new TextDecoder('utf-8').decode(bytes);\n}\n\nfunction findHtml(parts) {\n  if (!parts) return '';\n  for (const part of parts) {\n    if (part.mimeType === 'text/html' && part.body?.data) {\n      return decodeBase64Utf8(part.body.data);\n    }\n    if (part.parts) {\n      const found = findHtml(part.parts);\n      if (found) return found;\n    }\n  }\n  return '';\n}\n\nfunction findText(parts) {\n  if (!parts) return '';\n  for (const part of parts) {\n    if (part.mimeType === 'text/plain' && part.body?.data) {\n      return decodeBase64Utf8(part.body.data);\n    }\n    if (part.parts) {\n      const found = findText(part.parts);\n      if (found) return found;\n    }\n  }\n  return '';\n}\n\nconst parts = email.payload?.parts || [];\nlet htmlBody = findHtml(parts) || findText(parts) || email.snippet || '';\n\nconst subject = email.payload?.headers?.find(h => h.name === 'Subject')?.value \n  || email.Subject || 'Newsletter Aktionnaire';\nconst date = new Date().toISOString();\n\n// Nettoyer le HTML → texte (version améliorée)\nconst cleanText = htmlBody\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<\\/?(p|div|tr|li|h[1-6])[^>]*>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/&quot;/g, '\"')\n  .replace(/&#39;/g, \"'\")\n  .replace(/&eacute;/g, 'é').replace(/&egrave;/g, 'è')\n  .replace(/&agrave;/g, 'à').replace(/&ccedil;/g, 'ç')\n  .replace(/&ucirc;/g, 'û').replace(/&ocirc;/g, 'ô')\n  .replace(/&iuml;/g, 'ï').replace(/&rsquo;/g, \"'\")\n  .replace(/&lsquo;/g, \"'\").replace(/&rdquo;/g, '\"')\n  .replace(/&ldquo;/g, '\"').replace(/&ndash;/g, '–')\n  .replace(/&mdash;/g, '—').replace(/&frac34;/g, '¾')\n  .replace(/&[a-z]+;/gi, '')\n  // NOUVEAU : nettoyer les espaces multiples et indentations\n  .replace(/[ \\t]+/g, ' ')         // espaces/tabs multiples → 1 espace\n  .replace(/ *\\n */g, '\\n')        // espaces autour des sauts de ligne\n  .replace(/\\n{3,}/g, '\\n\\n')      // max 2 sauts de ligne\n  .trim();\n\n// Extraire les URLs — cherche aussi dans les redirects Mailjet\nconst urlRegex = /href=[\"'](https?:\\/\\/[^\"']*aktionnaire\\.fr[^\"']*|https?:\\/\\/[^\"']*substack\\.com[^\"']*)['\"]/gi;\nconst urls = [];\nlet match;\nwhile ((match = urlRegex.exec(htmlBody)) !== null) {\n  const url = match[1];\n  if (!url.includes('unsubscribe') && !url.includes('desinscription') && !url.includes('contact') && !urls.includes(url)) {\n    urls.push(url);\n  }\n}\n\nconsole.log(`✅ Email Aktionnaire nettoyé`);\nconsole.log(`   Sujet: ${subject}`);\nconsole.log(`   Texte: ${cleanText.length} caractères`);\nconsole.log(`   URLs: ${urls.length}`);\n\n// 4. On limite le texte à 8000 caractères pour ne pas exploser\n// le contexte de Claude (et donc le coût en tokens)\nreturn {\n  json: {\n    subject,\n    date,\n    cleanText: cleanText.substring(0, 8000),\n    zonebourseUrls: urls.slice(0, 20),\n    source: 'aktionnaire-newsletter'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2608,
+        1584
+      ],
+      "id": "49efb62d-b2cf-41f5-8563-ef32fbbd901e",
+      "name": "Cleaner Email Aktionnaire"
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json;\n\n// Recherche récursive du HTML dans les parts\nfunction findHtml(parts) {\n  if (!parts) return '';\n  for (const part of parts) {\n    if (part.mimeType === 'text/html' && part.body?.data) {\n      return atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));\n    }\n    if (part.parts) {\n      const found = findHtml(part.parts);\n      if (found) return found;\n    }\n  }\n  return '';\n}\n\n// Recherche texte brut en fallback\nfunction findText(parts) {\n  if (!parts) return '';\n  for (const part of parts) {\n    if (part.mimeType === 'text/plain' && part.body?.data) {\n      return atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));\n    }\n    if (part.parts) {\n      const found = findText(part.parts);\n      if (found) return found;\n    }\n  }\n  return '';\n}\n\nconst parts = email.payload?.parts || [];\nlet htmlBody = findHtml(parts) || findText(parts) || email.snippet || '';\n\nconst subject = email.payload?.headers?.find(h => h.name === 'Subject')?.value \n  || email.Subject || 'Newsletter MoneyRadar Crypto';\nconst date = new Date().toISOString();\n\n// Nettoyer le HTML → texte (version améliorée)\nlet cleanText = htmlBody\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')  // supprime les blocs CSS\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '') // supprime les scripts\n  .replace(/&#(\\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))\n  .replace(/&amp;/g, '&')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/[\\u00ad\\u034f\\u2004\\u200b]+/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nfunction decodeHtml(str) { return str; } // dummy, déjà appliqué inline\n\ncleanText = decodeHtml(cleanText);\n\n// Retire la séquence de caractères invisibles &#847; &#8199; &#173; répétée\ncleanText = cleanText.replace(/[\\u00ad\\u034f\\u2004\\u200b]+/g, '');\n\n// Extraire les URLs — cherche aussi dans les redirects Mailjet\n// Remplace la ligne urlRegex par :\nconst urlRegex = /href=[\"'](https?:\\/\\/[^\"']*moneyradar[^\"']*|https?:\\/\\/[^\"']*substack\\.com[^\"']*)['\"]/gi;\nconst urls = [];\nlet match;\nwhile ((match = urlRegex.exec(htmlBody)) !== null) {\n  const url = match[1];\n  if (!url.includes('unsubscribe') && !url.includes('desinscription') && !url.includes('contact') && !urls.includes(url)) {\n    urls.push(url);\n  }\n}\n\nconsole.log(`✅ Email MoneyRadar Crypto nettoyé`);\nconsole.log(`   Sujet: ${subject}`);\nconsole.log(`   Texte: ${cleanText.length} caractères`);\nconsole.log(`   URLs: ${urls.length}`);\n\n// 4. On limite le texte à 8000 caractères pour ne pas exploser\n// le contexte de Claude (et donc le coût en tokens)\nreturn {\n  json: {\n    subject,\n    date,\n    cleanText: cleanText.substring(0, 8000),\n    zonebourseUrls: urls.slice(0, 20),\n    source: 'moneyradar-newsletter'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2608,
+        1808
+      ],
+      "id": "6b443f5b-8fce-4d47-aadb-4d0f9a4c35b3",
+      "name": "Cleaner Email MoneyRadar Crypto"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "hour": 11,
+              "minute": 30
+            }
+          ]
+        },
+        "filters": {
+          "readStatus": "unread",
+          "sender": "Aktionnaire, list:(2b87ea10e7fa5fce0e1765cc5.424590.list-id.mcsv.net)"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3040,
+        1584
+      ],
+      "id": "4e4ff6c5-43c5-4c5e-ac4b-36d7ab95920a",
+      "name": "Gmail Trigger Aktionnaire",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "hour": 10
+            }
+          ]
+        },
+        "filters": {
+          "readStatus": "unread",
+          "sender": "MoneyRadar Crypto, list:(<moneyradarcrypto.substack.com>)"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3040,
+        1808
+      ],
+      "id": "f4eb2e2b-b692-4948-a887-a0178eea32dc",
+      "name": "Gmail Trigger MoneyRadar Crypto",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================================\n// NOEUD: Parser Newsletter Aktionnaire\n// ========================================================\n// RÔLE: Transformer la réponse Claude (texte brut avec\n// plusieurs articles séparés par ---ARTICLE---) en\n// objets individuels au même format que la branche RSS.\n//\n// POURQUOI: Claude retourne UN SEUL bloc de texte qui\n// contient l'analyse de TOUS les articles de la newsletter.\n// On doit le découper pour que chaque article soit traité\n// individuellement (1 article = 1 ligne Google Sheets).\n//\n// FORMAT DE SORTIE: Identique au node \"reponse de claude api\"\n// → { url, date, titre, secteur, importance, sentiment, tickers, analysis, tokens_used }\n// Comme ça le node \"If\" et \"Google Sheets\" qui suivent\n// n'ont pas besoin d'être modifiés.\n// ========================================================\n\nconst claudeResponse = $input.first().json;\nconst tokensUsed = (claudeResponse.usage?.input_tokens || 0) + (claudeResponse.usage?.output_tokens || 0);\nlet rawText = claudeResponse.content?.[0]?.text || '';\nconst clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nlet parsed = {};\ntry {\n  parsed = JSON.parse(clean);\n} catch (e) {\n  console.log('❌ JSON parse error:', e.message);\n  return [{ json: { titre: '', importance: 0 } }];\n}\n\n// ← remplace uniquement ce bloc\nfunction getNodeJson(name) {\n  try { return $node[name]?.json || null; }\n  catch(e) { return null; }\n}\nconst emailData =\n  getNodeJson('Cleaner Email Aktionnaire') ||\n  getNodeJson('Cleaner Email Zonebourse') ||\n  getNodeJson('Cleaner Email MoneyRadar Crypto') ||\n  {};\n// ← fin du remplacement\n\nconst newsletterDate = emailData.date || new Date().toISOString();\nconst dateStr = newsletterDate.split('T')[0];\nconst source = emailData.source || 'newsletter';\nconst tickers = Array.isArray(parsed.tickers)\n  ? parsed.tickers.join(',')\n  : (parsed.tickers || '');\nconsole.log(`✅ ${source} | ${parsed.titre} | ${parsed.importance}/5 | ${parsed.sentiment}`);\nreturn [{\n  json: {\n    url: `https://newsletter.techwatch.fr/${source}/${dateStr}`,\n    date: newsletterDate,\n    titre: parsed.titre || '',\n    titre_en: parsed.titre_en || '',\n    secteur: parsed.secteur || 'Finance',\n    importance: parseInt(parsed.importance) || 0,\n    sentiment: parsed.sentiment || 'Neutre',\n    tickers,\n    analysis: clean,\n    resume: parsed.resume || '',\n    points_cles: parsed.points_cles || [],\n    impact_marches: parsed.impact_marches || '',\n    opportunites: parsed.opportunites || '',\n    model: claudeResponse.model || 'claude-sonnet-4',\n    tokens_used: tokensUsed,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2080,
+        1584
+      ],
+      "id": "b8879954-2482-4620-92b4-c46407a5acd9",
+      "name": "Parser Newsletter Aktionnaire"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================================\n// NOEUD: Parser Newsletter MoneyRadar Crypto\n// ========================================================\n// RÔLE: Transformer la réponse Claude (texte brut avec\n// plusieurs articles séparés par ---ARTICLE---) en\n// objets individuels au même format que la branche RSS.\n//\n// POURQUOI: Claude retourne UN SEUL bloc de texte qui\n// contient l'analyse de TOUS les articles de la newsletter.\n// On doit le découper pour que chaque article soit traité\n// individuellement (1 article = 1 ligne Google Sheets).\n//\n// FORMAT DE SORTIE: Identique au node \"reponse de claude api\"\n// → { url, date, titre, secteur, importance, sentiment, tickers, analysis, tokens_used }\n// Comme ça le node \"If\" et \"Google Sheets\" qui suivent\n// n'ont pas besoin d'être modifiés.\n// ========================================================\n\nconst claudeResponse = $input.first().json;\nconst tokensUsed = (claudeResponse.usage?.input_tokens || 0) + (claudeResponse.usage?.output_tokens || 0);\n\nlet rawText = claudeResponse.content?.[0]?.text || '';\nconst clean = rawText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(clean);\n} catch (e) {\n  console.log('❌ JSON parse error:', e.message);\n  return [{ json: { titre: '', importance: 0 } }];\n}\n\n// Détermine la source selon le nœud Cleaner qui précède\nfunction getNodeJson(name) {\n  try { return $node[name]?.json || null; }\n  catch(e) { return null; }\n}\n\nconst emailData =\n  getNodeJson('Cleaner Email Aktionnaire') ||\n  getNodeJson('Cleaner Email Zonebourse') ||\n  getNodeJson('Cleaner Email MoneyRadar Crypto') ||\n  {};\n\nconst newsletterDate = emailData.date || new Date().toISOString();\nconst dateStr = newsletterDate.split('T')[0];\nconst source = emailData.source || 'newsletter';\n\nconst tickers = Array.isArray(parsed.tickers)\n  ? parsed.tickers.join(',')\n  : (parsed.tickers || '');\n\nconsole.log(`✅ ${source} | ${parsed.titre} | ${parsed.importance}/5 | ${parsed.sentiment}`);\n\nreturn [{\n  json: {\n    url: `https://newsletter.techwatch.fr/${source}/${dateStr}`,\n    date: newsletterDate,\n    titre: parsed.titre || '',\n    titre_en: parsed.titre_en || '',\n    secteur: parsed.secteur || 'Finance',\n    importance: parseInt(parsed.importance) || 0,\n    sentiment: parsed.sentiment || 'Neutre',\n    tickers,\n    analysis: clean,\n    resume: parsed.resume || '',\n    points_cles: parsed.points_cles || [],\n    impact_marches: parsed.impact_marches || '',\n    opportunites: parsed.opportunites || '',\n    model: claudeResponse.model || 'claude-sonnet-4',\n    tokens_used: tokensUsed,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2064,
+        1808
+      ],
+      "id": "fdaef5e0-8e35-4710-abac-745f6018262f",
+      "name": "Parser Newsletter MoneyRadar"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 4000,\n  messages: [{\n    role: \"user\",\n    content: \"Tu es un analyste financier expert. Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans backticks.\\n\\nNewsletter du \" + $json.date + \" — Sujet : \" + $json.subject + \"\\n\\nContenu :\\n\" + $json.cleanText + \"\\n\\nFormat JSON attendu :\\n{\\n  \\\"titre\\\": \\\"Titre en français, max 80 caractères\\\",\\n  \\\"titre_en\\\": \\\"English translation\\\",\\n  \\\"secteur\\\": \\\"IA | Finance | Crypto | Tech | Cybersécurité | Énergie | Santé | Immobilier | Autre\\\",\\n  \\\"resume\\\": \\\"3-4 phrases de résumé exécutif\\\",\\n  \\\"points_cles\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n  \\\"impact_marches\\\": \\\"Secteurs concernés, actions/entreprises mentionnées\\\",\\n  \\\"opportunites\\\": \\\"Opportunités et risques identifiés\\\",\\n  \\\"tickers\\\": [\\\"NVDA\\\", \\\"AAPL\\\"],\\n  \\\"importance\\\": 3,\\n  \\\"sentiment\\\": \\\"Positif\\\"\\n}\\n\\nRègles strictes :\\n- titre : traduction française, max 80 caractères\\n- secteur : UNE seule valeur exacte parmi la liste\\n- tickers : max 5, [] si aucun. Exclure : IA, AI, ML, LLM, GPU, CPU, USA, UK, UE, PDG, CEO, CFO, CTO, USD, EUR, GBP, CAC, DOW, ETF, IPO, LLC, INC, SA, NV, AG, RSI, MACD, SMA, GDP, ROI, PIB, PME, SEC, DOJ, FBI, ICE, NASA, NFL, CHIPS, II, III, IV, S, B, A, C, Y, EN\\n- importance : entier 1 à 5, critères stricts :\\n  * 1 : bruit de fond, aucun impact marché identifiable\\n  * 2 : info sectorielle mineure, tendance faible, levée de fonds < 50M$\\n  * 3 : news notable, levée de fonds 50-500M$, annonce produit d'un acteur majeur\\n  * 4 : impact significatif sur un secteur entier, mouvement de marché >3%, faille critique exploitée activement, acquisition >1Md$, décision réglementaire majeure\\n  * 5 : événement systémique uniquement — crash, crise géopolitique majeure, faillite d'un acteur systémique\\n- sentiment : exactement \\\"Positif\\\", \\\"Négatif\\\" ou \\\"Neutre\\\"\\n- Répondre UNIQUEMENT avec le JSON, rien d'autre\"\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2352,
+        1808
+      ],
+      "id": "75ca3a4c-a5a6-47a2-9ef8-c3680e070b9e",
+      "name": "Claude API MoneyRadar",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      },
+      "notes": "Prompt adapté pour les newsletters : extrait PLUSIEURS articles d'un seul email, contrairement au flux RSS qui traite 1 article à la fois."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 4000,\n  messages: [{\n    role: \"user\",\n    content: \"Tu es un analyste financier expert. Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans backticks.\\n\\nNewsletter du \" + $json.date + \" — Sujet : \" + $json.subject + \"\\n\\nContenu :\\n\" + $json.cleanText + \"\\n\\nFormat JSON attendu :\\n{\\n  \\\"titre\\\": \\\"Titre en français, max 80 caractères\\\",\\n  \\\"titre_en\\\": \\\"English translation\\\",\\n  \\\"secteur\\\": \\\"IA | Finance | Crypto | Tech | Cybersécurité | Énergie | Santé | Immobilier | Autre\\\",\\n  \\\"resume\\\": \\\"3-4 phrases de résumé exécutif\\\",\\n  \\\"points_cles\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n  \\\"impact_marches\\\": \\\"Secteurs concernés, actions/entreprises mentionnées\\\",\\n  \\\"opportunites\\\": \\\"Opportunités et risques identifiés\\\",\\n  \\\"tickers\\\": [\\\"NVDA\\\", \\\"AAPL\\\"],\\n  \\\"importance\\\": 3,\\n  \\\"sentiment\\\": \\\"Positif\\\"\\n}\\n\\nRègles strictes :\\n- titre : traduction française, max 80 caractères\\n- secteur : UNE seule valeur exacte parmi la liste\\n- tickers : max 5, [] si aucun. Exclure : IA, AI, ML, LLM, GPU, CPU, USA, UK, UE, PDG, CEO, CFO, CTO, USD, EUR, GBP, CAC, DOW, ETF, IPO, LLC, INC, SA, NV, AG, RSI, MACD, SMA, GDP, ROI, PIB, PME, SEC, DOJ, FBI, ICE, NASA, NFL, CHIPS, II, III, IV, S, B, A, C, Y, EN\\n- importance : entier 1 à 5, critères stricts :\\n  * 1 : bruit de fond, aucun impact marché identifiable\\n  * 2 : info sectorielle mineure, tendance faible, levée de fonds < 50M$\\n  * 3 : news notable, levée de fonds 50-500M$, annonce produit d'un acteur majeur\\n  * 4 : impact significatif sur un secteur entier, mouvement de marché >3%, faille critique exploitée activement, acquisition >1Md$, décision réglementaire majeure\\n  * 5 : événement systémique uniquement — crash, crise géopolitique majeure, faillite d'un acteur systémique\\n- sentiment : exactement \\\"Positif\\\", \\\"Négatif\\\" ou \\\"Neutre\\\"\\n- Répondre UNIQUEMENT avec le JSON, rien d'autre\"\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2352,
+        1584
+      ],
+      "id": "2705bd02-f984-49e4-a245-5d63bd4984bc",
+      "name": "Claude API Aktionnaire",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      },
+      "notes": "Prompt adapté pour les newsletters : extrait PLUSIEURS articles d'un seul email, contrairement au flux RSS qui traite 1 article à la fois."
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.id }}?format=full\n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2832,
+        1584
+      ],
+      "id": "0badf596-827e-415c-a6c4-14b28bd54ecc",
+      "name": "HTTP Request (Message Gmail Aktionnaire)",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.id }}?format=full\n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2832,
+        1808
+      ],
+      "id": "2aecde5c-1484-4e85-b630-6eda78aaceb6",
+      "name": "HTTP Request ( Get message MoneyRadar Crypto",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 4000,\n  messages: [{\n    role: \"user\",\n    content: \"Tu es un analyste financier expert. Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans backticks.\\n\\nNewsletter du \" + $json.date + \" — Sujet : \" + $json.subject + \"\\n\\nContenu :\\n\" + $json.cleanText + \"\\n\\nFormat JSON attendu :\\n{\\n  \\\"titre\\\": \\\"Titre en français, max 80 caractères\\\",\\n  \\\"titre_en\\\": \\\"English translation\\\",\\n  \\\"secteur\\\": \\\"IA | Finance | Crypto | Tech | Cybersécurité | Énergie | Santé | Immobilier | Autre\\\",\\n  \\\"resume\\\": \\\"3-4 phrases de résumé exécutif\\\",\\n  \\\"points_cles\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n  \\\"impact_marches\\\": \\\"Secteurs concernés, actions/entreprises mentionnées\\\",\\n  \\\"opportunites\\\": \\\"Opportunités et risques identifiés\\\",\\n  \\\"tickers\\\": [\\\"NVDA\\\", \\\"AAPL\\\"],\\n  \\\"importance\\\": 3,\\n  \\\"sentiment\\\": \\\"Positif\\\"\\n}\\n\\nRègles strictes :\\n- titre : traduction française, max 80 caractères\\n- secteur : UNE seule valeur exacte parmi la liste\\n- tickers : max 5, [] si aucun. Exclure : IA, AI, ML, LLM, GPU, CPU, USA, UK, UE, PDG, CEO, CFO, CTO, USD, EUR, GBP, CAC, DOW, ETF, IPO, LLC, INC, SA, NV, AG, RSI, MACD, SMA, GDP, ROI, PIB, PME, SEC, DOJ, FBI, ICE, NASA, NFL, CHIPS, II, III, IV, S, B, A, C, Y, EN\\n- importance : entier 1 à 5, critères stricts :\\n  * 1 : bruit de fond, aucun impact marché identifiable\\n  * 2 : info sectorielle mineure, tendance faible, levée de fonds < 50M$\\n  * 3 : news notable, levée de fonds 50-500M$, annonce produit d'un acteur majeur\\n  * 4 : impact significatif sur un secteur entier, mouvement de marché >3%, faille critique exploitée activement, acquisition >1Md$, décision réglementaire majeure\\n  * 5 : événement systémique uniquement — crash, crise géopolitique majeure, faillite d'un acteur systémique\\n- sentiment : exactement \\\"Positif\\\", \\\"Négatif\\\" ou \\\"Neutre\\\"\\n- Répondre UNIQUEMENT avec le JSON, rien d'autre\"\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2352,
+        1328
+      ],
+      "id": "0915df81-008b-482b-849b-f7b7ead0b1f9",
+      "name": "Claude API ZoneBourse",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      },
+      "notes": "Prompt adapté pour les newsletters : extrait PLUSIEURS articles d'un seul email, contrairement au flux RSS qui traite 1 article à la fois."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_skipped",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            },
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"={{ $json.url || '' }}\",\n  \"original_title\": \"={{ $json.original_title || '' }}\",\n  \"reason\": \"={{ !$json.titre ? 'titre vide' : $json.importance === 0 ? 'importance 0' : 'inconnu' }}\",\n  \"raw_output\": \"={{ typeof $json.analysis === 'string' ? $json.analysis.substring(0, 500) : '' }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1440,
+        768
+      ],
+      "id": "bf451073-4641-44a4-9289-7dcb5c4758d8",
+      "name": "Log Article Skippé",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/vip_entities?active=eq.true&select=name",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2800,
+        816
+      ],
+      "id": "6208099f-9e37-4395-a357-8bd28037a297",
+      "name": "Charger entités VIP",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data "
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2224,
+        816
+      ],
+      "id": "22bd0a68-f923-4249-85f5-75ef9706d12a",
+      "name": "fetch source RSS",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/rpc/increment_source_count",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"article_url\": \"={{ $json.bestMatchUrl }}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -160,
+        672
+      ],
+      "id": "27170eb4-bb67-404d-9859-6d7e22a27115",
+      "name": "HTTP Request source_count"
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 3,
+        "output": "={{ (() => {\n  const h = new Date().getHours();\n  const importance = Number(String($json.importance ?? '').trim());\n  if (Number.isNaN(importance)) return 2;\n  if ($json.watchlistMatch) return 1;\n  return h < 6 && importance < 4 ? 0 : importance >= 4 ? 1 : 2;\n})() }}"
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        960
+      ],
+      "id": "329c3314-e3b0-45bf-87fd-955198fc8c36",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "84d8311e-ae51-4ff0-8293-7f3654e445bd",
+              "leftValue": "={{ $json.importance }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1776,
+        1136
+      ],
+      "id": "f25f0847-43bf-4a05-bd99-9e053f04a866",
+      "name": "If (importance 5)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-haiku-4-5-20251001\",\n  max_tokens: 70,\n  messages: [{\n    role: \"user\",\n    content: \"Article : \\\"\" + $json.titre + \"\\\"\\nRésumé : \" + $json.resume + \"\\n\\nEst-ce un événement vraiment systémique ?\\nRéponds UNIQUEMENT : CONFIRME ou REJETTE\"\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2000,
+        1120
+      ],
+      "id": "665778d7-e879-4684-ae27-fa924e1a8962",
+      "name": "HTTP Request (Haiku Check)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        },
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dcf59856-ba92-4ec2-a10c-683ea229a3fc",
+              "leftValue": "={{ $input.first().json.content?.[0]?.text?.trim().includes('CONFIRME') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2160,
+        1120
+      ],
+      "id": "93eedcb9-9dbb-4776-b040-ece3ce32dd52",
+      "name": "If (Haiku verdict)"
+    },
+    {
+      "parameters": {
+        "content": "## Validation Haiku \nImportance 5",
+        "height": 240,
+        "width": 736,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        1056
+      ],
+      "id": "7d00ea7a-4d4d-4d1c-9fff-d2d310f0b424",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const haikuResponse = $input.first().json;\nconst isConfirmed = haikuResponse.content?.[0]?.text?.trim().includes('CONFIRME');\nconst article = $node[\"If (importance 5)\"].json;\nreturn { json: { ...article, haikuConfirmed: isConfirmed } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        1104
+      ],
+      "id": "e7576872-527f-4ce9-b0e9-043c6e6ddb45",
+      "name": "Préparer Gmail Haiku"
+    },
+    {
+      "parameters": {
+        "jsCode": "const watchlistTickers = $items(\"Charger Watchlist\")\n  .map(i => i.json.ticker.toUpperCase());\n\nconst articleTickers = ($json.tickers || '')\n  .split(',')\n  .map(t => t.trim().toUpperCase())\n  .filter(t => t.length > 0);\n\nconst matchedTicker = articleTickers.find(t => watchlistTickers.includes(t));\n\nreturn { json: { \n  ...$json, \n  watchlistMatch: !!matchedTicker,\n  watchlistTicker: matchedTicker || ''\n}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        896
+      ],
+      "id": "b6abe37d-637b-44bc-a0b7-f94b1490a216",
+      "name": "Check Watchlist"
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/ticker_watchlist?active=eq.true&select=ticker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2608,
+        816
+      ],
+      "id": "034d0486-77c0-411b-968f-ca35449568fb",
+      "name": "Charger Watchlist",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "API Claude": {
+      "main": [
+        [
+          {
+            "node": "reponse de claude api",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaner HTML": {
+      "main": [
+        [
+          {
+            "node": "If (contenu HTML)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reponse de claude api": {
+      "main": [
+        [
+          {
+            "node": "Check Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recup flux RSS": {
+      "main": [
+        [
+          {
+            "node": "If (flux Mort)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Article": {
+      "main": [
+        [
+          {
+            "node": "Check Doublon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaner Email Zonebourse": {
+      "main": [
+        [
+          {
+            "node": "Claude API ZoneBourse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Newsletter Zonebourse": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger Zonebourse": {
+      "main": [
+        [
+          {
+            "node": "Cleaner Email Zonebourse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapper Supabase": {
+      "main": [
+        [
+          {
+            "node": "Insert Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Source RSS": {
+      "main": [
+        [
+          {
+            "node": "fetch source RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (doublon)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Doublon": {
+      "main": [
+        [
+          {
+            "node": "If (doublon)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (contenu HTML)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "API Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If(article vide)": {
+      "main": [
+        [
+          {
+            "node": "Log Article Skippé",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Supabase": {
+      "main": [
+        [
+          {
+            "node": "Code Jaccard (calcul pur)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (flux Mort)": {
+      "main": [
+        [
+          {
+            "node": "Message Flux Mort",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (zone grise)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request Claude",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cleaner HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Claude": {
+      "main": [
+        [
+          {
+            "node": "Code (parse verdict Claude)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (skip direct)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request source_count",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If (zone grise)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (parse verdict Claude)": {
+      "main": [
+        [
+          {
+            "node": "If (doublon confirmé par Claude)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (doublon confirmé par Claude)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Cleaner HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Jaccard (calcul pur)": {
+      "main": [
+        [
+          {
+            "node": "If (skip direct)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Charger entités VIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaner Email Aktionnaire": {
+      "main": [
+        [
+          {
+            "node": "Claude API Aktionnaire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaner Email MoneyRadar Crypto": {
+      "main": [
+        [
+          {
+            "node": "Claude API MoneyRadar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger Aktionnaire": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Message Gmail Aktionnaire)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger MoneyRadar Crypto": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request ( Get message MoneyRadar Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Newsletter Aktionnaire": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Newsletter MoneyRadar": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API MoneyRadar": {
+      "main": [
+        [
+          {
+            "node": "Parser Newsletter MoneyRadar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API Aktionnaire": {
+      "main": [
+        [
+          {
+            "node": "Parser Newsletter Aktionnaire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (Message Gmail Aktionnaire)": {
+      "main": [
+        [
+          {
+            "node": "Cleaner Email Aktionnaire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request ( Get message MoneyRadar Crypto": {
+      "main": [
+        [
+          {
+            "node": "Cleaner Email MoneyRadar Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API ZoneBourse": {
+      "main": [
+        [
+          {
+            "node": "Parser Newsletter Zonebourse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charger entités VIP": {
+      "main": [
+        [
+          {
+            "node": "Charger Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch source RSS": {
+      "main": [
+        [
+          {
+            "node": "Recup flux RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If (importance 5)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mapper Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (importance 5)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Haiku Check)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message (importance)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (Haiku Check)": {
+      "main": [
+        [
+          {
+            "node": "If (Haiku verdict)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (Haiku verdict)": {
+      "main": [
+        [
+          {
+            "node": "Préparer Gmail Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer Gmail Haiku": {
+      "main": [
+        [
+          {
+            "node": "Send a message (importance)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Watchlist": {
+      "main": [
+        [
+          {
+            "node": "If(article vide)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charger Watchlist": {
+      "main": [
+        [
+          {
+            "node": "Source RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ywem9AHsiPcuFvRe",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Gmail Trigger Zonebourse": {
+      "lastTimeChecked": 1780088713,
+      "possibleDuplicates": [
+        "19e758e34446def0"
+      ]
+    },
+    "node:Gmail Trigger Aktionnaire": {
+      "Gmail Trigger Aktionnaire": {
+        "lastTimeChecked": 1781152237,
+        "possibleDuplicates": [
+          "19eb4f4ac0c3acb3",
+          "19eafcd91ffd6e98"
+        ]
+      }
+    },
+    "node:Gmail Trigger MoneyRadar Crypto": {
+      "Gmail Trigger MoneyRadar Crypto": {
+        "lastTimeChecked": 1781111980,
+        "possibleDuplicates": [
+          "19eb28d6ab525513"
+        ]
+      }
+    }
+  },
+  "pinData": {},
+  "triggerCount": 4,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

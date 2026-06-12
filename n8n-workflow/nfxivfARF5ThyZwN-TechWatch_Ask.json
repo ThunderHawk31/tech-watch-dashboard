@@ -1,0 +1,235 @@
+﻿{
+  "name": "TechWatch Ask",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cbf39d0b-933c-43a1-8fb8-97c232ee8a82",
+      "name": "When chat message received",
+      "webhookId": "5e4c965c-6c3a-473e-aad0-119e47ec845c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $json.model,\n  max_tokens: $json.model === 'claude-sonnet-4-20250514' ? 2048 : 512,\n  messages: [{\n    role: 'user',\n    content: `Tu es l'assistant de veille de TechWatch. Voici les articles récents :\\n\\n${JSON.stringify($json.articles, null, 2).substring(0, 6000)}\\n\\nQuestion : ${$json.message}\\n\\n${$json.promptStyle}\\n\\nRéponds en français. Aujourd'hui : ${new Date().toLocaleDateString('fr-FR')}`\n  }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f02c7780-37af-4224-9d2a-d7c7cc75e067",
+      "name": "Appel Claude",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        },
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "title,sector,importance,sentiment,tickers,published_at,analysis"
+            },
+            {
+              "name": "order",
+              "value": "published_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "30"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b0e90126-d247-4fe0-a19e-19f920310305",
+      "name": "Fetch Articles",
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xCjicFQrWIVRxmrW",
+          "name": "Clé Anon Supabase"
+        },
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst message = input.chatInput || '';\nconst msgLower = message.toLowerCase().trim();\nconst words = message.trim().split(/\\s+/);\n\n// Mots-clés analytiques → force Sonnet même sur message court\nconst analyticKeywords = [\n  'pourquoi', 'analyse', 'analysе', 'impact', 'compare', 'comparе',\n  'explique', 'comment', 'quelles sont', 'quels sont', 'tendance',\n  'perspective', 'risque', 'opportunité', 'stratégie', 'implications',\n  'conséquences', 'difference', 'différence', 'versus', ' vs '\n];\nconst isAnalytic = analyticKeywords.some(k => msgLower.includes(k));\n\n// Mots-clés liste rapide → force Haiku même sur message long\nconst listKeywords = [\n  'donne-moi les news', 'dernières news', 'derniers articles',\n  'quoi de neuf', \"qu'est ce qu'il s'est passé\", 'actu', \n  'résumé', 'liste', 'recap', 'récap'\n];\nconst isList = listKeywords.some(k => msgLower.includes(k));\n\n// Salutations/questions triviales → Haiku\nconst isTrivial = \n  words.length <= 3 ||\n  /^(salut|bonjour|merci|ok|oui|non|hello|hi|coucou|aide|help)$/i.test(msgLower);\n\n// Logique de décision\nlet model;\nif (isAnalytic) {\n  model = 'claude-sonnet-4-20250514'; // Analytique → Sonnet quelle que soit la longueur\n} else if (isTrivial || isList) {\n  model = 'claude-haiku-4-5-20251001'; // Trivial ou liste → Haiku\n} else {\n  // Par défaut : longueur du message comme tiebreaker\n  model = words.length > 8 ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001';\n}\n\nconsole.log(`Message: \"${message}\" → ${isAnalytic ? 'ANALYTIQUE' : isList ? 'LISTE' : isTrivial ? 'TRIVIAL' : 'DEFAULT'} → ${model}`);\n\nreturn {\n  json: {\n    message,\n    model\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f951a08e-5522-4528-bcac-dbf621b53f14",
+      "name": "Sélecteur Modèle"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\n// Si erreur upstream (Supabase ou Claude)\nif (response.error || !response.content) {\n  console.log('Erreur upstream:', JSON.stringify(response).substring(0, 200));\n  return {\n    json: {\n      output: 'Désolé, une erreur est survenue. Réessaie dans quelques instants.'\n    }\n  };\n}\n\nconst text = response.content?.[0]?.text || 'Désolé, je n\\'ai pas pu générer de réponse.';\nconst model = response.model || '';\nconst tokens = response.usage ? \n  `${response.usage.input_tokens}in / ${response.usage.output_tokens}out` : '';\n\nconsole.log(`Modèle: ${model} | Tokens: ${tokens}`);\n\nreturn {\n  json: {\n    output: text\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "2959c82b-b41d-436d-ac7d-c4e59e32e577",
+      "name": "Parser Réponse"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputMessage = $('Sélecteur Modèle').first().json.message;\nconst model = $('Sélecteur Modèle').first().json.model;\nconst msgLower = inputMessage.toLowerCase();\n\n// Secteurs détectables dans le message\nconst secteurMap = {\n  'ia': 'IA', 'intelligence artificielle': 'IA',\n  'crypto': 'Crypto', 'bitcoin': 'Crypto', 'btc': 'Crypto', 'eth': 'Crypto',\n  'finance': 'Finance', 'marché': 'Finance', 'bourse': 'Finance',\n  'tech': 'Tech', 'technologie': 'Tech',\n  'cyber': 'Cybersécurité', 'sécurité': 'Cybersécurité', 'hack': 'Cybersécurité',\n  'énergie': 'Énergie', 'energie': 'Énergie', 'solaire': 'Énergie',\n  'santé': 'Santé', 'sante': 'Santé', 'pharma': 'Santé'\n};\n\n// Tickers détectables dans le message\nconst allTickers = $input.all().flatMap(i => \n  (i.json.tickers || '').split(',').map(t => t.trim().toUpperCase()).filter(t => t)\n);\nconst uniqueTickers = [...new Set(allTickers)];\nconst mentionedTicker = uniqueTickers.find(t => msgLower.includes(t.toLowerCase()));\n\n// Secteur mentionné\nconst mentionedSecteur = Object.entries(secteurMap)\n  .find(([key]) => msgLower.includes(key))?.[1];\n\n// Filtrage\nlet articles = $input.all();\n\nif (mentionedTicker) {\n  const filtered = articles.filter(i => \n    (i.json.tickers || '').toUpperCase().includes(mentionedTicker)\n  );\n  if (filtered.length > 0) articles = filtered;\n} else if (mentionedSecteur) {\n  const filtered = articles.filter(i => i.json.sector === mentionedSecteur);\n  if (filtered.length > 0) articles = filtered;\n}\n\n// Extraction résumé depuis le JSON analysis\nfunction sanitizeResume(text) {\n  if (!text || typeof text !== 'string') return '';\n  return text\n    // Strip les tentatives de changement de rôle\n    .replace(/ignore\\s+(les\\s+)?instructions?\\s+(précédentes?|ci-dessus|above|previous)/gi, '[...]')\n    .replace(/tu\\s+es\\s+maintenant/gi, '[...]')\n    .replace(/you\\s+are\\s+now/gi, '[...]')\n    .replace(/act\\s+as/gi, '[...]')\n    // Strip les faux délimiteurs de prompt\n    .replace(/\\\\n(Human|Assistant|System|User)\\s*:/gi, ' ')\n    .replace(/\\n(Human|Assistant|System|User)\\s*:/gi, ' ')\n    .replace(/#{1,6}\\s*(system|instruction|prompt)/gi, '[...]')\n    // Strip les balises HTML/XML résiduelles\n    .replace(/<[^>]{0,100}>/g, '')\n    // Normalise les sauts de ligne multiples\n    .replace(/\\n{3,}/g, '\\n\\n')\n    // Tronque\n    .substring(0, 425)\n    .trim();\n}\n\nfunction extractResume(analysis) {\n  if (!analysis) return '';\n  try {\n    const parsed = JSON.parse(analysis);\n    return sanitizeResume(parsed.resume || '');\n  } catch {\n    return sanitizeResume(analysis.substring(0, 425));\n  }\n}\n\nconst mapped = articles.map(i => ({\n  titre: i.json.title,\n  secteur: i.json.sector,\n  importance: i.json.importance,\n  sentiment: i.json.sentiment,\n  tickers: i.json.tickers,\n  date: i.json.published_at,\n  resume: extractResume(i.json.analysis)\n}));\n\nconst promptStyle = model === 'claude-sonnet-4-20250514'\n  ? `Analyse détaillée en 5-8 phrases. Structure ta réponse avec des points clés si pertinent. Cite les titres sources et explique les implications.`\n  : `Réponse courte et directe en 2-3 phrases max. Va à l'essentiel, cite juste les titres.`;\n\nreturn {\n  json: {\n    articles: mapped,\n    message: inputMessage,\n    model,\n    promptStyle,  // ← nouveau\n    filtre: mentionedTicker || mentionedSecteur || 'aucun'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "96bbd00d-6fcb-4a38-b7b0-40fba58d8a1f",
+      "name": "Agréger Articles"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Sélecteur Modèle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Articles": {
+      "main": [
+        [
+          {
+            "node": "Agréger Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sélecteur Modèle": {
+      "main": [
+        [
+          {
+            "node": "Fetch Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appel Claude": {
+      "main": [
+        [
+          {
+            "node": "Parser Réponse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agréger Articles": {
+      "main": [
+        [
+          {
+            "node": "Appel Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ywem9AHsiPcuFvRe",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

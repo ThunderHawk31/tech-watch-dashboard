@@ -1,0 +1,130 @@
+﻿{
+  "name": "TechWatch- Nettoyage hebdomadaire",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 10,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "4bebf3c6-9b4c-4628-b3d1-652728dc0720",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/rpc/cleanup_old_articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "id": "7d237ab1-0168-459b-9f8d-52c424a4d350",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        -224
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "nolanfirstiron@gmail.com",
+        "subject": "=🧹 TechWatch · Nettoyage — {{ $json.deleted_articles }} article(s) supprimé(s)",
+        "message": "=Nettoyage hebdomadaire effectué le {{ new Date().toLocaleDateString(\"fr-FR\") }}.\n\nArticles supprimés : {{ $json.deleted_articles }}\nEntrées skipped supprimées : {{ $json.deleted_skipped }}",
+        "options": {}
+      },
+      "id": "4757bbe3-1ccc-40d9-b230-9779ad7b809b",
+      "name": "Notification nettoyage",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -224
+      ],
+      "webhookId": "98756d7f-f0e7-493e-b600-6ac9a92e82ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Notification nettoyage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ywem9AHsiPcuFvRe",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

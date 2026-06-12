@@ -1,0 +1,65 @@
+﻿{
+  "name": "TechWatch — Error Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -208
+      ],
+      "id": "335b7e8b-97fb-49e6-b18d-d824e1ff8793",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "nolanfirstiron@gmail.com",
+        "subject": "=🚨 TechWatch — Crash : {{ $json.workflow.name }}",
+        "message": "=<b>Workflow :</b> {{ $json.workflow.name }}<br><br>\n<b>Node en erreur :</b> {{ $json.execution.lastNodeExecuted }}<br><br>\n<b>Message :</b> {{ $json.execution.error.message }}<br><br>\n<b>Heure :</b> {{ $json.execution.startedAt }}<br><br>\n<a href=\"https://thunderhawk.app.n8n.cloud/workflow/{{ $json.workflow.id }}\">\n  🔗 Ouvrir le workflow dans n8n\n</a>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        -208
+      ],
+      "id": "caed0bbe-6c57-450e-ad24-86788d8d466b",
+      "name": "Send a message",
+      "webhookId": "c2ab8201-0258-4c7d-9554-653c6984d348",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

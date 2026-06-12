@@ -1,0 +1,286 @@
+﻿{
+  "name": "TechWatch Daily Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 7 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "413aa8ba-de6f-4b0c-9ba8-a2a06c2d682d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles?published_at=gte.{{ new Date(Date.now() - 24*3600*1000).toISOString() }}&importance=gte.3&select=title,importance,sector,url,analysis,sentiment&order=importance.desc&limit=20",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "08eab62b-de1b-4df9-a21f-f4809273042f",
+      "name": "Fetch articles 24h",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xCjicFQrWIVRxmrW",
+          "name": "Clé Anon Supabase"
+        },
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = $input.all().map(i => i.json);\n\nif (articles.length === 0) {\n  return [{ json: { skip: true } }];\n}\n\nconst topArticles = articles.slice(0, 5).map(a => ({\n  titre: a.title,\n  importance: a.importance,\n  secteur: a.sector,\n  url: a.url\n}));\n\nconst sectors = articles.reduce((acc, a) => {\n  acc[a.sector] = (acc[a.sector] || 0) + 1;\n  return acc;\n}, {});\n\nconst articlesText = articles.slice(0, 10).map((a, i) =>\n  `${i+1}. [${a.importance}/5] ${a.title} (${a.sector})`\n).join('\\n');\n\nreturn [{ json: {\n  skip: false,\n  topArticles,\n  sectors,\n  prompt: `Tu es un analyste de veille tech/finance. Voici les ${articles.length} articles importants du jour :\\n\\n${articlesText}\\n\\nRédige un digest en 3-4 phrases qui synthétise les grandes tendances du jour. Sois factuel, concis, en français. Mets en avant les thèmes transversaux si plusieurs articles convergent.`\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "84ce7369-21ee-4f0d-b6f6-3a5c27de0973",
+      "name": "Préparer prompt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b2d72a8-cb0a-424e-905c-452493da992c",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "540e7342-69d3-4747-9d5a-8fd842d97dd4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-haiku-4-5-20251001\",\n  max_tokens: 300,\n  messages: [{ role: \"user\", content: $json.prompt }]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        96
+      ],
+      "id": "e552be8e-23ce-425b-88c1-df49fc037609",
+      "name": "Claude Haiku",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const haiku = $input.first().json;\nconst prep = $node[\"Préparer prompt\"].json;\nconst summary = haiku.content?.[0]?.text?.trim() || '';\n\nreturn [{ json: {\n  date: new Date().toISOString().split('T')[0],\n  summary,\n  top_articles: prep.topArticles,\n  sectors: prep.sectors\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        96
+      ],
+      "id": "72ff4fd8-521b-4285-8a1f-86dac3fd8e6d",
+      "name": "Formater résultat"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/daily_digest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey ",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        96
+      ],
+      "id": "be671c68-fef9-4801-99bb-e01ce25b16d9",
+      "name": "Insert Supabase",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7syT4R12TyoJi75F",
+          "name": "Clé API Claude"
+        },
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch articles 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch articles 24h": {
+      "main": [
+        [
+          {
+            "node": "Préparer prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer prompt": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Claude Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Haiku": {
+      "main": [
+        [
+          {
+            "node": "Formater résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formater résultat": {
+      "main": [
+        [
+          {
+            "node": "Insert Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ywem9AHsiPcuFvRe",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": null
+}

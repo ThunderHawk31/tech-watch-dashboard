@@ -1,0 +1,498 @@
+﻿{
+  "name": "TechWatch — Health Check",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 10,18 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2864,
+        96
+      ],
+      "id": "d1981b45-f54a-4fa2-a4a4-82a119dc7c7b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_articles?select=article_id&published_at=gte.{{ new Date(Date.now() - 24*3600*1000).toISOString() }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1136,
+        96
+      ],
+      "id": "c7bc41aa-ca07-4a37-890e-670659e6b158",
+      "name": "Stats Supabase articles",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_skipped?select=id&skipped_at=gte.{{ new Date(Date.now() - 24*3600*1000).toISOString() }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -848,
+        96
+      ],
+      "id": "5978c207-feee-4511-97b7-be42e31baebb",
+      "name": "Stats Supabase skipped",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_ID.supabase.co/rest/v1/techwatch_health",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "articles_24h",
+              "value": "={{ $json.articles_24h }}"
+            },
+            {
+              "name": "skipped_24h",
+              "value": "={{ $json.skipped_24h }}"
+            },
+            {
+              "name": "flux_status",
+              "value": "={{ JSON.stringify($json.flux_status) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "613b37cc-5169-4974-a4e3-a51ac91162be",
+      "name": "HTTP Request",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "aqOcmdRxndJlZZba",
+          "name": "Clé Service Role Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b3a27069-04f6-4d76-82e3-05c02edce9eb",
+              "leftValue": "={{ $(\"Agrège Flux RSS\").first().json.alert_needed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "a40f81bd-2170-485c-a810-f3f94dae7f2b",
+      "name": "If(Alert needed)"
+    },
+    {
+      "parameters": {
+        "sendTo": "nolanfirstiron@gmail.com",
+        "subject": "==⚠️ TechWatch · Health Alert — {{ new Date().toLocaleDateString('fr-FR') }}\n\nArticles ingérés (24h) : {{ $(\"Agrège Flux RSS\").first().json.articles_24h }}\nArticles skippés (24h) : {{ $(\"Agrège Flux RSS\").first().json.skipped_24h }}\n\nFlux RSS :\n{{ Object.entries($(\"Agrège Flux RSS\").first().json.flux_status).map(([name, status]) => `- ${name} : ${status}`).join('\\n') }}",
+        "message": "=Rapport Health TechWatch — {{ new Date().toLocaleString('fr-FR') }}  Articles ingérés (24h) : {{ $json.articles_24h }} Articles skippés (24h) : {{ $json.skipped_24h }}  Flux RSS : {{ Object.entries($json.flux_status).map(([name, status]) => `- ${name} : ${status}`).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ef74e70b-3338-4786-a229-cf4eb824255f",
+      "name": "Send a message",
+      "webhookId": "dd9bb19e-7a1b-4e74-b00c-a9803c5975a4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "znetDVPg1LAQe3nN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const feeds = [\n  \"TechCrunch\", \"OReilly\", \"TheHackerNews\",\n  \"CoinDesk\", \"HuggingFace\", \"LesEchos\", \"CERTFR\"\n];\n\n// Flux RSS — vrais noms des nœuds\nconst fluxNodes = {\n  \"TechCrunch\":     \"Test Flux RSS Techcrunch\",\n  \"OReilly\":        \"Test Flux RSS O'Reilly\",\n  \"TheHackerNews\":  \"Test Flux RSS TheHackerNews\",\n  \"CoinDesk\":       \"Test Flux RSS CoinDesk\",\n  \"HuggingFace\":    \"Test Flux RSS HuggingFace\",\n  \"LesEchos\":       \"Test Flux RSS Les Echos\",\n  \"CertFR\":         \"Test Flux RSS Cert-FR\"\n};\n\nconst flux_status = {};\nconst deadFeeds = [];\n\nfor (const [name, nodeName] of Object.entries(fluxNodes)) {\n  try {\n    const d = $node[nodeName].json;\n    flux_status[name] = (!d.error && JSON.stringify(d).length > 100) ? 'ok' : 'dead';\n  } catch(e) {\n    flux_status[name] = 'dead';\n  }\n  if (flux_status[name] === 'dead') deadFeeds.push(name);\n}\n\n// Stats Supabase\nconst articles24h = $(\"Stats Supabase articles\").all().length;\nconst skipped24h  = $(\"Stats Supabase skipped\").all().length;\n\nconsole.log('Flux:', flux_status);\nconsole.log('Articles 24h:', articles24h, '| Skipped:', skipped24h);\n\nreturn {\n  json: {\n    articles_24h:  articles24h,\n    skipped_24h:   skipped24h,\n    flux_status,\n    dead_feeds:    deadFeeds,\n    has_dead:      deadFeeds.length > 0,\n    no_ingestion:  articles24h === 0,\n    alert_needed:  deadFeeds.length > 0 || articles24h === 0\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        96
+      ],
+      "id": "204be711-f2bb-4cbe-952f-99654b0ac9f6",
+      "name": "Agrège Flux RSS"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2640,
+        96
+      ],
+      "id": "a58122c9-b53d-49ec-adb0-1a6cc0582d90",
+      "name": "Test Flux RSS Techcrunch",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.oreilly.com/radar/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2416,
+        96
+      ],
+      "id": "05b653d1-8ff8-4cd8-b416-b54c351878cc",
+      "name": "Test Flux RSS O'Reilly",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.feedburner.com/TheHackersNews",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2192,
+        96
+      ],
+      "id": "8a835c71-0699-4ac7-b447-963c4ab8c359",
+      "name": "Test Flux RSS TheHackerNews",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://coindesk.com/arc/outboundfeeds/rss/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1984,
+        96
+      ],
+      "id": "a6824666-e397-476f-852d-684cfcc9180a",
+      "name": "Test Flux RSS CoinDesk",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://huggingface.co/blog/feed.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1776,
+        96
+      ],
+      "id": "75e2bb48-a801-4679-815e-f863968d603e",
+      "name": "Test Flux RSS HuggingFace",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://services.lesechos.fr/rss/les-echos-finance-marches.xml",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1568,
+        96
+      ],
+      "id": "ad7ecd9b-34ac-4e2e-8726-9fadc3d48a0f",
+      "name": "Test Flux RSS Les Echos",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.cert.ssi.gouv.fr/feed/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1344,
+        96
+      ],
+      "id": "b5a15159-ae99-4141-9f94-dce62f28e3c0",
+      "name": "Test Flux RSS Cert-FR",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS Techcrunch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stats Supabase articles": {
+      "main": [
+        [
+          {
+            "node": "Stats Supabase skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stats Supabase skipped": {
+      "main": [
+        [
+          {
+            "node": "Agrège Flux RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If(Alert needed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If(Alert needed)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrège Flux RSS": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS Techcrunch": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS O'Reilly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS O'Reilly": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS TheHackerNews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS TheHackerNews": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS CoinDesk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS CoinDesk": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS HuggingFace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS HuggingFace": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS Les Echos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS Les Echos": {
+      "main": [
+        [
+          {
+            "node": "Test Flux RSS Cert-FR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Flux RSS Cert-FR": {
+      "main": [
+        [
+          {
+            "node": "Stats Supabase articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ywem9AHsiPcuFvRe",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
