@@ -5,13 +5,12 @@
 
 <em>Dashboard de veille technologique et financière — automatisé avec n8n + Claude AI</em>
 
-<img src="https://img.shields.io/github/last-commit/ThunderHawk31/tech-watch-dashboard?style=flat&logo=git&logoColor=white&color=0080ff" alt="last-commit">
-<img src="https://img.shields.io/github/languages/top/ThunderHawk31/tech-watch-dashboard?style=flat&color=0080ff" alt="repo-top-language">
 <img src="https://img.shields.io/badge/n8n-EA4B71?style=flat&logo=n8n&logoColor=white" alt="n8n">
 <img src="https://img.shields.io/badge/Claude_API-191919?style=flat&logo=anthropic&logoColor=white" alt="Claude API">
 <img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat&logo=React&logoColor=black" alt="React">
 <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white" alt="Supabase">
 <img src="https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white" alt="Vercel">
+<img src="https://img.shields.io/github/last-commit/ThunderHawk31/tech-watch-dashboard?style=flat&logo=git&logoColor=white&color=0080ff" alt="last-commit">
 
 </div>
 
@@ -115,7 +114,7 @@ flowchart TB
 
 | Composant | Technologie | Coût |
 |-----------|-------------|------|
-| Automatisation | n8n self-hosted | Gratuit (voir étape 3) |
+| Automatisation | n8n | Gratuit 15j → voir étape 3 |
 | Analyse IA | Claude API Sonnet | ~$5/mois usage perso |
 | Base de données | Supabase (PostgreSQL) | Gratuit |
 | Frontend | React sur Vercel | Gratuit |
@@ -174,11 +173,10 @@ create policy "Public read" on flux_sources for select using (true);
 
 ### Étape 2 — Déployer le site web sur Vercel
 
-1. Avoir un compte **[GitHub](https://github.com)** → cliquer **"Fork"** en haut à droite de ce repo
-2. Aller sur **[vercel.com](https://vercel.com)** → "Log in with GitHub"
-3. Cliquer **"Add New… > Project"** → sélectionner votre fork
-4. Dans **"Root Directory"**, écrire : `frontend`
-5. Ouvrir **"Environment Variables"** et ajouter :
+1. Aller sur **[vercel.com](https://vercel.com)** → "Log in with GitHub"
+2. Cliquer **"Add New… > Project"** → coller l'URL du repo : `https://github.com/ThunderHawk31/tech-watch-dashboard`
+3. Dans **"Root Directory"**, écrire : `frontend`
+4. Ouvrir **"Environment Variables"** et ajouter :
 
 | Nom | Valeur |
 |-----|--------|
@@ -186,7 +184,7 @@ create policy "Public read" on flux_sources for select using (true);
 | `REACT_APP_SUPABASE_ANON_KEY` | Votre anon key |
 | `REACT_APP_SUPABASE_BASE_URL` | Même valeur que `REACT_APP_SUPABASE_URL` |
 
-6. Cliquer **"Deploy"** → dans ~2 minutes votre site est en ligne ✅
+5. Cliquer **"Deploy"** → dans ~2 minutes votre site est en ligne ✅
 
 > À ce stade le site s'affiche mais sans articles — c'est n8n qui va les injecter.
 
@@ -196,12 +194,18 @@ create policy "Public read" on flux_sources for select using (true);
 
 n8n doit tourner en permanence sur un serveur.
 
-**Option A — Railway (recommandé pour débuter)**
+**Option A — n8n Cloud (recommandé, 15 jours d'essai gratuit)**
+1. Aller sur **[n8n.io](https://n8n.io)** → "Get started for free" → créer un compte
+2. Un instance n8n est créée automatiquement — noter votre URL (ex : `https://moninstance.app.n8n.cloud`)
+3. Après les 15 jours d'essai, l'abonnement est payant (~$20/mois)
+
+**Option B — Railway (gratuit jusqu'à $5/mois de ressources)**
 1. Aller sur **[railway.app](https://railway.app)** → créer un compte (via GitHub)
 2. Cliquer **"New Project"** → **"Deploy from template"** → chercher **"n8n"** → Deploy
 3. Attendre le déploiement (~3 min) → copier le domaine public → ouvrir dans le navigateur → créer un compte n8n
+4. Après épuisement du crédit gratuit, Railway devient payant à l'usage
 
-**Option B — NAS ou serveur personnel** (si vous en avez un, contactez l'auteur)
+**Option C — NAS ou serveur personnel** (si vous en avez un, contactez l'auteur)
 
 ---
 
@@ -247,17 +251,22 @@ Les fichiers workflow sont dans le dossier [`n8n-workflow/`](n8n-workflow/) de c
 
 ## 🤖 Bonus — Contrôler n8n depuis Claude (MCP)
 
-Vous pouvez connecter votre instance n8n à Claude pour gérer les workflows en langage naturel, sans ouvrir l'interface n8n. Deux façons de le faire :
+Vous pouvez connecter votre instance n8n à Claude pour gérer les workflows en langage naturel, sans ouvrir l'interface n8n.
+
+### Récupérer les détails de connexion MCP dans n8n
+
+1. Dans n8n → menu gauche **"Settings"** → **"Instance-level MCP"**
+2. Cliquer **"Connection details"**
+3. Choisir **"OAuth"** → copier l'URL et les informations affichées
 
 ### Option A — Sur claude.ai (interface web)
 
-1. Aller sur **[claude.ai](https://claude.ai)** → cliquer sur votre avatar en haut à droite → **"Paramètres"**
-2. Dans le menu gauche → **"Intégrations"**
-3. Cliquer **"Ajouter une intégration"** → chercher **n8n** dans la liste
-4. Renseigner :
-   - **URL** : `https://votre-instance.app.n8n.cloud`
-   - **API Key** : dans n8n → Settings → API → créer une clé
-5. Cliquer **"Connecter"** ✅
+1. Aller sur **[claude.ai](https://claude.ai)** → cliquer sur votre avatar en haut à droite → **"Personnaliser"**
+2. Dans le menu gauche → **"Connecteurs"**
+3. Cliquer le bouton **"+"** → **"Parcourir les connecteurs"**
+4. Chercher **n8n** dans la liste → cliquer dessus
+5. Renseigner l'URL et les informations OAuth copiées depuis n8n
+6. Cliquer **"Connecter"** ✅
 
 Claude peut ensuite exécuter, lister et modifier vos workflows directement depuis la conversation.
 
@@ -265,7 +274,7 @@ Claude peut ensuite exécuter, lister et modifier vos workflows directement depu
 
 1. Ouvrir Claude Code → taper `/config`
 2. Aller dans **"MCP Servers"** → chercher **"n8n"** → activer
-3. Renseigner les mêmes URL et API Key qu'en option A
+3. Renseigner les mêmes informations de connexion qu'en option A
 
 ---
 
@@ -287,7 +296,18 @@ tech-watch-dashboard/
 - **Ajouter/retirer des sources RSS** : modifier le node "Source RSS" dans n8n
 - **Changer le seuil d'alerte** : modifier la condition `importance ≥ 4` dans le node "If"
 - **Ajouter une newsletter** : insérer une ligne dans la table `flux_sources` (type = `newsletter`) — aucun code à modifier
-- **Nouveaux secteurs** : modifier le prompt dans le node "API Claude" (attention : les regex du parser en dépendent)
+
+### Adapter les newsletters
+
+Le workflow inclut des branches prédéfinies pour traiter des newsletters spécifiques (ZoneBourse, Aktionnaire, MoneyRadar) dans la **Zone IA & Nettoyage**. Chaque newsletter a sa propre branche : Cleaner Email → Claude API → Parser Newsletter.
+
+Pour adapter à vos propres newsletters :
+1. Dans n8n → ouvrir le workflow → repérer la section **"Zone IA & Nettoyage"**
+2. Dupliquer une branche newsletter existante
+3. Modifier le **Gmail Trigger** pour cibler votre newsletter (filtre par expéditeur ou objet)
+4. Adapter le prompt dans le node **Claude API** à votre newsletter
+5. Mettre à jour le **Parser Newsletter** si le format de sortie change
+6. Ajouter la newsletter dans la table `flux_sources` Supabase (pour le badge affiché sur le dashboard)
 
 ---
 
