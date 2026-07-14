@@ -3,6 +3,7 @@
 # Environment variables (CRITICAL - DO NOT COMMIT)
 .env
 *.env
+.env.production
 !.env.example
 .env.local
 .env.development.local
