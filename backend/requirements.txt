@@ -3,9 +3,9 @@
 # ============================================================
 
 # Web Framework
-fastapi==0.110.1
+fastapi==0.121.0
 uvicorn[standard]==0.25.0
-starlette==0.37.2
+starlette==0.49.3  # CVE-2025-62727 — nécessite starlette>=0.49.1
 python-multipart==0.0.20
 
 # Database
