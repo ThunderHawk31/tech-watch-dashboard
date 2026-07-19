@@ -5,7 +5,8 @@ const SUPABASE_URL      = `${SUPABASE_BASE}/rest/v1/techwatch_articles`;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const CACHE_DURATION = 5 * 60 * 1000;
-const CACHE_KEY      = 'tech_watch_cache';
+// v2 : invalide les caches antérieurs à l'ajout de source/score_reason
+const CACHE_KEY      = 'tech_watch_cache_v2';
 
 // Cache en mémoire pour les sources (valide toute la session)
 let _sourcesCache = null;
@@ -73,7 +74,9 @@ function mapArticle(row) {
     sentiment: row.sentiment || 'Neutre',
     actions: row.tickers || '',
     secteur: row.sector || 'Autre',
-    tokens: row.tokens || 0
+    tokens: row.tokens || 0,
+    source: row.source || '',
+    scoreReason: row.score_reason || ''
   };
 }
 
@@ -104,7 +107,7 @@ async function fetchFromSupabase() {
   console.log('🔄 Récupération des données depuis Supabase...');
   
   const response = await fetch(
-    `${SUPABASE_URL}?select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&order=published_at.desc`,
+    `${SUPABASE_URL}?select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&order=published_at.desc`,
     {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -255,7 +258,7 @@ export async function fetchArticleById(id) {
 
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector&limit=1`,
+      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,

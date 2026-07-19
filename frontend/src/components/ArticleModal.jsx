@@ -11,10 +11,10 @@ import { useLang } from "../contexts/LangContext";
 import { useSources, getSourceInfo } from "../contexts/SourcesContext";
 
 const ArticleModal = ({ article, open, onClose }) => {
-  if (!article) return null;
-
   const { lang } = useLang();
   const sources = useSources();
+
+  if (!article) return null;
   const sourceInfo = getSourceInfo(article.url, sources);
   const newsletterSource = sourceInfo?.type === 'newsletter' ? sourceInfo.name : null;
   const modalTitle = lang === 'en' && article.titre_en
@@ -80,6 +80,12 @@ const ArticleModal = ({ article, open, onClose }) => {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Opportunités</p>
                 <p className="text-foreground leading-relaxed">{opportunites}</p>
+              </div>
+            )}
+            {article.scoreReason && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Pourquoi ce score</p>
+                <p className="text-muted-foreground leading-relaxed">{article.scoreReason}</p>
               </div>
             )}
             {!resume && !pointsCles && !impact && !opportunites && (

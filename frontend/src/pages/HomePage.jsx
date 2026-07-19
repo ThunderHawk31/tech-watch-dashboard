@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
@@ -12,7 +12,6 @@ import FiltersBar from "../components/FiltersBar";
 import FiltersBarSkeleton from "../components/FiltersBarSkeleton";
 import StatsOverview from "../components/StatsOverview";
 import ArticlesSkeleton from "../components/ArticlesSkeleton";
-
 // Extrait le premier paragraphe du champ analyse pour og:description
 function excerptFromAnalyse(analyse = '', maxLen = 150) {
   let text = analyse;
@@ -103,10 +102,10 @@ const HomePage = () => {
     });
   }, []); // eslint-disable-line
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (targetPage = page) => {
     setLoading(true);
     try {
-      const data = await fetchArticlesAPI(filters, page);
+      const data = await fetchArticlesAPI(filters, targetPage);
       setArticles(data.articles);
       setTotalCount(data.total);
       setStats(data.stats);
@@ -120,14 +119,21 @@ const HomePage = () => {
     }
   };
 
-  useEffect(() => {
-    setPage(1);
-    fetchArticles();
-  }, [filters.sectors, filters.sentiment, filters.minImportance, filters.sort, filters.search, filters.ticker]); // eslint-disable-line
+  // Un seul effet pour filtres + page : évite le double fetch au montage
+  // et lors d'un changement de filtre quand page > 1.
+  const filtersKey = JSON.stringify([filters.sectors, filters.sentiment, filters.minImportance, filters.sort, filters.search, filters.ticker]);
+  const prevFiltersKeyRef = useRef(filtersKey);
 
   useEffect(() => {
+    const filtersChanged = prevFiltersKeyRef.current !== filtersKey;
+    prevFiltersKeyRef.current = filtersKey;
+    if (filtersChanged && page !== 1) {
+      // Le reset de page relance cet effet, qui fera le fetch avec page = 1
+      setPage(1);
+      return;
+    }
     fetchArticles();
-  }, [page]); // eslint-disable-line
+  }, [filtersKey, page]); // eslint-disable-line
 
   const totalPages = Math.ceil(totalCount / 15);
 
