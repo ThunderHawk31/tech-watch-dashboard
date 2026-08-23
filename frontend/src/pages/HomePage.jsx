@@ -194,7 +194,7 @@ const HomePage = () => {
                 fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
                 color: '#4ade80', background: 'rgba(74,222,128,0.1)',
                 border: '0.5px solid rgba(74,222,128,0.3)',
-                borderRadius: '99px', padding: '3px 11px'
+                borderRadius: '99px', padding: '3px 13px'
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: 'pulse 2s infinite' }} />
                 EN DIRECT · {label}
@@ -208,7 +208,7 @@ const HomePage = () => {
                     color: 'inherit', cursor: refreshing ? 'default' : 'pointer'
                   }}
                 >
-                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
               </span>
             </div>
