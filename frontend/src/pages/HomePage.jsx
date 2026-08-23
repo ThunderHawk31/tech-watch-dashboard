@@ -191,7 +191,7 @@ const HomePage = () => {
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
+                fontSize: '13px', fontWeight: 500, letterSpacing: '0.05em',
                 color: '#4ade80', background: 'rgba(74,222,128,0.1)',
                 border: '0.5px solid rgba(74,222,128,0.3)',
                 borderRadius: '99px', padding: '3px 13px'
