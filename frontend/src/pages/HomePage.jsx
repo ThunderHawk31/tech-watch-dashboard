@@ -204,7 +204,7 @@ const HomePage = () => {
                   aria-label="Actualiser les articles"
                   style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'none', border: 'none', padding: 0, margin: 0,
+                    background: 'none', border: 'none', padding: '8px', margin: '-8px',
                     color: 'inherit', cursor: refreshing ? 'default' : 'pointer'
                   }}
                 >
