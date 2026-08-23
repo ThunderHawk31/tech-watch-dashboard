@@ -30,8 +30,8 @@ const ArticleModal = ({ article, open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Badge className={`${sector.bg} ${sector.text} border-0 gap-1.5`}>
               <SectorIcon className="w-3 h-3" />
@@ -49,7 +49,7 @@ const ArticleModal = ({ article, open, onClose }) => {
           <DialogDescription>{formatDate(article.date)}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[50vh] pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           <div className="flex flex-col gap-4 text-sm">
             {resume && (
               <div>
@@ -95,7 +95,7 @@ const ArticleModal = ({ article, open, onClose }) => {
         </ScrollArea>
 
         {article.actions && article.actions.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap py-2 border-t border-border">
+          <div className="shrink-0 flex items-center gap-2 flex-wrap py-2 border-t border-border">
             <span className="text-sm text-muted-foreground">Actions mentionnées :</span>
             {(article.actions || []).map(action => (
               <Badge key={action} variant="secondary" className="font-mono">{action}</Badge>
@@ -103,7 +103,7 @@ const ArticleModal = ({ article, open, onClose }) => {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-2 border-t border-border">
+        <div className="shrink-0 flex items-center gap-2 pt-2 border-t border-border">
           <Button asChild className="flex-1 gap-2 h-11">
             <a href={sanitizeURL(article.url)} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4" />
