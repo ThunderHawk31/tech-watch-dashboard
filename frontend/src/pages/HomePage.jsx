@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
-import { fetchArticles as fetchArticlesAPI, fetchArticleById } from "../api";
+import { fetchArticles as fetchArticlesAPI, fetchArticleById, invalidateCache } from "../api";
 import { sectorConfig } from "../lib/config";
 import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
@@ -30,6 +30,7 @@ const HomePage = () => {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const getInitialSectors = () => {
@@ -135,6 +136,23 @@ const HomePage = () => {
     fetchArticles();
   }, [filtersKey, page]); // eslint-disable-line
 
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    invalidateCache();
+    try {
+      const data = await fetchArticlesAPI(filters, page);
+      setArticles(data.articles);
+      setTotalCount(data.total);
+      setStats(data.stats);
+      toast.success("Articles actualisés");
+    } catch (error) {
+      console.error('Erreur refresh:', error);
+      toast.error("Erreur lors de l'actualisation");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / 15);
 
   return (
@@ -187,7 +205,11 @@ const HomePage = () => {
       </div>
 
       <StatsOverview stats={stats} />
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end items-center gap-3 mb-4">
+        <Button onClick={handleManualRefresh} variant="outline" size="sm" className="gap-2" disabled={refreshing}>
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Actualiser
+        </Button>
         <Link
           to="/digest"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

@@ -26,6 +26,10 @@ export async function fetchSources() {
   }
 }
 
+export function invalidateCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+}
+
 // Récupère le cache depuis localStorage
 function getCache() {
   try {
