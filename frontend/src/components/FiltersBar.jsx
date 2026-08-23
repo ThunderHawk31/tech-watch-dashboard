@@ -90,7 +90,7 @@ const FiltersBar = ({ filters, setFilters }) => {
               <button
                 key={name}
                 onClick={() => toggleSector(name)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm border transition-all duration-150 ${
                   active
                     ? 'border-transparent text-white font-medium'
                     : 'border-border bg-card/60 text-muted-foreground hover:text-foreground hover:border-border/80'
@@ -105,7 +105,7 @@ const FiltersBar = ({ filters, setFilters }) => {
           {(filters.sectors || []).length > 0 && (
             <button
               onClick={() => setFilters(prev => ({ ...prev, sectors: [] }))}
-              className="px-3 py-1.5 rounded-full text-sm border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+              className="px-3.5 py-2 rounded-full text-sm border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
             >
               Tout afficher
             </button>

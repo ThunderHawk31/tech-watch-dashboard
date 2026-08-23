@@ -262,11 +262,11 @@ const HomePage = () => {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-8">
-              <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage(p => p - 1)} aria-label="Page précédente">
+              <Button variant="outline" size="icon" className="h-11 w-11" disabled={page === 1} onClick={() => setPage(p => p - 1)} aria-label="Page précédente">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className="text-sm text-muted-foreground px-4" aria-live="polite">Page {page} sur {totalPages}</span>
-              <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} aria-label="Page suivante">
+              <Button variant="outline" size="icon" className="h-11 w-11" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} aria-label="Page suivante">
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

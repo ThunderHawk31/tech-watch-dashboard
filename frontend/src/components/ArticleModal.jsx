@@ -104,7 +104,7 @@ const ArticleModal = ({ article, open, onClose }) => {
         )}
 
         <div className="flex items-center gap-2 pt-2 border-t border-border">
-          <Button asChild className="flex-1 gap-2">
+          <Button asChild className="flex-1 gap-2 h-11">
             <a href={sanitizeURL(article.url)} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4" />
               {newsletterSource ? `Voir l'article original (${newsletterSource})` : "Voir l'article original"}
@@ -113,6 +113,7 @@ const ArticleModal = ({ article, open, onClose }) => {
           <Button
             variant="outline"
             size="icon"
+            className="h-11 w-11"
             onClick={() => {
               const link = `${window.location.origin}/?article=${article.id}`;
               navigator.clipboard.writeText(link);

@@ -113,10 +113,12 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
           <div className="flex items-center gap-2">
             <button
               onClick={handleToggleFavorite}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
               aria-label={isArticleFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+              style={{ padding: '6px', margin: '-6px' }}
             >
-              <Star className={`w-5 h-5 transition-colors ${isArticleFavorite ? "fill-amber-400 text-amber-400" : "text-gray-600 hover:text-amber-400"}`} />
+              <span className="flex p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <Star className={`w-5 h-5 transition-colors ${isArticleFavorite ? "fill-amber-400 text-amber-400" : "text-gray-600 hover:text-amber-400"}`} />
+              </span>
             </button>
             <div className="flex items-center gap-0.5">
               {renderStars(article.importance)}
@@ -128,10 +130,13 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
           {article.titre_en && (
             <button
               onClick={(e) => { e.stopPropagation(); setLang(lang === 'fr' ? 'en' : 'fr'); }}
-              className={`shrink-0 mt-0.5 p-1 rounded-md transition-colors ${lang === 'en' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              className="shrink-0 mt-0.5"
+              style={{ padding: '8px', margin: '-8px' }}
               title={lang === 'fr' ? 'Voir en anglais' : 'Voir en français'}
             >
-              <Languages className="w-3.5 h-3.5" />
+              <span className={`flex p-1 rounded-md transition-colors ${lang === 'en' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}>
+                <Languages className="w-3.5 h-3.5" />
+              </span>
             </button>
           )}
         </CardTitle>

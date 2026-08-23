@@ -141,7 +141,7 @@ Via Tech Watch - Veille IA & Tech automatisée`;
         onClick={handleShare}
         variant={variant}
         size={size}
-        className="gap-2"
+        className={showText ? "gap-2" : "gap-2 h-11 w-11 p-0"}
       >
         <ShareIcon className={`w-4 h-4 ${copied ? 'text-green-500' : ''}`} />
         {showText && (
