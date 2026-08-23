@@ -188,7 +188,7 @@ const HomePage = () => {
             ? `mise à jour il y a ${Math.floor(diff / 60)}h`
             : `mise à jour il y a ${Math.floor(diff / 1440)}j`;
           return (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 fontSize: '11px', fontWeight: 500, letterSpacing: '0.05em',
@@ -199,17 +199,23 @@ const HomePage = () => {
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: 'pulse 2s infinite' }} />
                 EN DIRECT · {label}
               </span>
+              <Button
+                onClick={handleManualRefresh}
+                variant="ghost"
+                size="icon"
+                className="w-6 h-6"
+                disabled={refreshing}
+                aria-label="Actualiser les articles"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           );
         })()}
       </div>
 
       <StatsOverview stats={stats} />
-      <div className="flex justify-end items-center gap-3 mb-4">
-        <Button onClick={handleManualRefresh} variant="outline" size="sm" className="gap-2" disabled={refreshing}>
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Actualiser
-        </Button>
+      <div className="flex justify-end mb-4">
         <Link
           to="/digest"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
