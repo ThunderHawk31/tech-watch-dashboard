@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/article/:slug",
-      "has": [{ "type": "header", "key": "user-agent", "value": "(?i)(facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|googlebot|bingbot|teamsbot|redditbot|pinterestbot)" }],
+      "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|googlebot|bingbot|teamsbot|redditbot|pinterestbot).*" }],
       "destination": "/api/og?slug=:slug"
     },
     { "source": "/article/:slug", "destination": "/" }
