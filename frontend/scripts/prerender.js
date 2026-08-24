@@ -26,7 +26,6 @@ const path = require("path");
 const fs = require("fs");
 
 const BUILD_DIR = path.join(__dirname, "..", "build");
-const PORT = 45678;
 
 // Sélecteur par défaut : <h1>/<main> existent dès le premier rendu React,
 // avant même le chargement des données. Ne convient qu'aux pages sans
@@ -61,6 +60,35 @@ const ROUTES = [
   },
 ];
 
+function randomPort() {
+  return 30000 + Math.floor(Math.random() * 20000);
+}
+
+// Un port fixe est entré en collision (EADDRINUSE) quand le build de
+// production et un build de preview pour le même commit ont tourné en
+// succession rapprochée sur la même machine de build Vercel, le port de
+// la première instance n'étant pas encore libéré. Un port aléatoire avec
+// quelques tentatives élimine la classe de bug plutôt que de la repousser.
+async function startServer(maxAttempts = 5) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const port = randomPort();
+    const server = httpServer.createServer({ root: BUILD_DIR, proxy: `http://localhost:${port}?` });
+    try {
+      await new Promise((resolve, reject) => {
+        server.server.once("error", reject);
+        server.listen(port, () => {
+          server.server.removeListener("error", reject);
+          resolve();
+        });
+      });
+      return { server, port };
+    } catch (err) {
+      if (err.code === "EADDRINUSE" && attempt < maxAttempts) continue;
+      throw err;
+    }
+  }
+}
+
 async function waitForReady(page, selector) {
   try {
     await page.waitForSelector(selector, { timeout: 15000 });
@@ -83,8 +111,7 @@ async function main() {
   // renvoient un 404 brut. Le proxy vers soi-même est l'astuce standard de
   // http-server pour retomber sur index.html (fallback SPA) sur tout chemin
   // non trouvé, comme le fait la réécriture SPA de Vercel en production.
-  const server = httpServer.createServer({ root: BUILD_DIR, proxy: `http://localhost:${PORT}?` });
-  await new Promise((resolve) => server.listen(PORT, resolve));
+  const { server, port: PORT } = await startServer();
   console.log(`Serveur local sur http://localhost:${PORT}`);
 
   const browser = await puppeteer.launch({
