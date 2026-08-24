@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,analysis&limit=1`,
+    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,impact_marches,opportunites&limit=1`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   }
 
   const title = escapeHtml(article.title || 'Tech Watch');
-  let desc = String(article.analysis || '').replace(/\s+/g, ' ').trim();
+  let desc = String(article.impact_marches || article.opportunites || '').replace(/\s+/g, ' ').trim();
   if (desc.length > 155) desc = desc.slice(0, 155).replace(/\s+\S*$/, '') + '…';
   desc = escapeHtml(desc);
   const canonical = `https://techwatch.fr/article/${slug}`;
