@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   let desc = String(article.analysis || '').replace(/\s+/g, ' ').trim();
   if (desc.length > 155) desc = desc.slice(0, 155).replace(/\s+\S*$/, '') + '…';
   desc = escapeHtml(desc);
-  const canonical = `https://techwatch.fr/?article=${article.article_id}`;
+  const canonical = `https://techwatch.fr/article/${slug}`;
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -51,8 +51,6 @@ export default async function handler(req, res) {
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${desc}" />
-  <link rel="canonical" href="${canonical}" />
-  <meta http-equiv="refresh" content="0;url=${canonical}" />
 </head>
 <body></body>
 </html>`;
