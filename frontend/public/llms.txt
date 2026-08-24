@@ -1,24 +1,26 @@
 # TechWatch
 
 > Plateforme française de veille technologique automatisée par IA.
-> Analyses générées par Claude API (Anthropic) depuis des flux RSS de référence.
+> Analyses générées par Claude API (Anthropic) depuis des flux RSS et newsletters de référence.
 > Mise à jour 2 fois par jour via n8n (6h30 et 18h30).
 
 ## À propos
 
 TechWatch est un projet personnel développé par un étudiant en BTS SIO SISR.
-Il agrège et analyse automatiquement les actualités tech des secteurs IA, Cybersécurité,
-Finance, Crypto, Énergie et Santé.
+Il agrège et analyse automatiquement les actualités tech et finance des secteurs IA,
+Cybersécurité, Finance, Crypto, Énergie et Santé.
 
 ## Accès au contenu
 
 - Dashboard : https://techwatch.fr
-- Flux RSS : https://techwatch-production.up.railway.app/rss.xml
-- Articles individuels : https://techwatch.fr/article/{id}
+- Flux RSS : https://techwatch.fr/api/rss
+- Articles individuels : https://techwatch.fr/article/{slug}
 
 ## Sources agrégées
 
-TechCrunch, BleepingComputer, CoinDesk, HuggingFace Blog, O'Reilly, The Hacker News
+Cybersécurité : CERT-FR, The Hacker News, BleepingComputer, Sekoia Threat Intelligence
+Finance/Tech : TechCrunch, CoinDesk, Les Echos (Finance & Marchés), HuggingFace Blog, O'Reilly Radar
+Newsletters : Zonebourse, Aktionnaire, MoneyRadar Crypto, Coinbase Bytes, Investir (Les Echos)
 
 ## Secteurs couverts
 
@@ -26,12 +28,11 @@ IA, Tech, Finance, Crypto, Énergie, Santé, Cybersécurité
 
 ## Stack technique
 
-Frontend : React + Vite, déployé sur Vercel
-Backend : FastAPI, déployé sur Railway
+Frontend : React (Create React App), déployé sur Vercel
 Base de données : Supabase (PostgreSQL)
-Automatisation : n8n Cloud
+Automatisation : n8n auto-hébergé
 Analyse : Claude API (Anthropic)
 
 ## Contact
 
-GitHub : https://github.com/nolan
+GitHub : https://github.com/ThunderHawk31
