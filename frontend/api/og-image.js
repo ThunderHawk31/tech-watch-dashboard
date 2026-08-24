@@ -50,10 +50,15 @@ async function loadGoogleFont(family, weight) {
     },
   }).then((res) => res.text());
 
-  const match = css.match(/src: url\(([^)]+)\) format\('(?:opentype|truetype)'\)/);
-  if (!match) throw new Error(`Font source not found for ${family} ${weight}`);
+  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\(['"]?(?:opentype|truetype)['"]?\)/);
+  if (!match) {
+    throw new Error(`Font source not found for ${family} ${weight}. CSS snippet: ${css.slice(0, 400)}`);
+  }
 
   const fontRes = await fetch(match[1]);
+  if (!fontRes.ok) {
+    throw new Error(`Font file fetch failed for ${family} ${weight}: HTTP ${fontRes.status}`);
+  }
   return fontRes.arrayBuffer();
 }
 
