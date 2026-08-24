@@ -16,7 +16,13 @@ export default async function handler(req, res) {
   const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
   const slug = searchParams.get('slug');
   if (!slug || !SUPABASE_KEY) {
-    res.status(400).send('Missing slug');
+    res.status(400).json({
+      error: 'Missing slug',
+      debug_url: req.url,
+      debug_host: req.headers.host,
+      debug_query_object: req.query,
+      debug_has_key: !!SUPABASE_KEY,
+    });
     return;
   }
 
