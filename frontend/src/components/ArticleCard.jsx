@@ -96,6 +96,7 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
 
   return (
     <Card
+      data-testid="article-card"
       className={`group cursor-pointer bg-card hover:bg-card/80 transition-all duration-300 hover:-translate-y-1${article.importance >= 5 ? ' card-top' : ''}`}
       onClick={() => onOpenModal(article)}
     >

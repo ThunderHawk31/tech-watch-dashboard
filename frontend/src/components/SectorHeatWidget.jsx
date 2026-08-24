@@ -9,7 +9,7 @@ const SectorHeatWidget = ({ expanded = false }) => {
     fetchSectorHeat().then(setSectors);
   }, []);
 
-  if (!sectors.length) return <p className="text-sm text-muted-foreground">Aucune donnée disponible.</p>;
+  if (!sectors.length) return <p className="text-sm text-muted-foreground" data-testid="sector-heat-empty">Aucune donnée disponible.</p>;
 
   const max = sectors[0]?.heat_score || 1;
 
@@ -40,7 +40,7 @@ const SectorHeatWidget = ({ expanded = false }) => {
         const intensity = Math.round((s.heat_score / max) * 100);
         const hasSentiment = (s.positive_count > 0 || s.negative_count > 0);
         return (
-          <div key={s.sector} className="flex items-center gap-4 p-4 rounded-xl bg-card/60 border border-border">
+          <div key={s.sector} className="flex items-center gap-4 p-4 rounded-xl bg-card/60 border border-border" data-testid="sector-heat-item">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted shrink-0">
               <Icon className="w-5 h-5" style={{ color: cfg.color }} />
             </div>

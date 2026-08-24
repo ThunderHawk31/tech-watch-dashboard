@@ -63,6 +63,7 @@
   "scripts": {
     "start": "craco start",
     "build": "node scripts/check-env-keys.js && craco build",
+    "postbuild": "node scripts/prerender.js",
     "test": "craco test"
   },
   "browserslist": {
@@ -88,7 +89,9 @@
     "eslint-plugin-react": "7.37.4",
     "eslint-plugin-react-hooks": "5.2.0",
     "globals": "15.15.0",
+    "http-server": "^14.1.1",
     "postcss": "^8.4.49",
+    "puppeteer": "^25.8.0",
     "tailwindcss": "^3.4.17"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
