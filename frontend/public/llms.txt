@@ -2,7 +2,7 @@
 
 > Plateforme française de veille technologique automatisée par IA.
 > Analyses générées par Claude API (Anthropic) depuis des flux RSS et newsletters de référence.
-> Mise à jour 2 fois par jour via n8n (6h30 et 18h30).
+> Mise à jour 2 fois par jour via n8n (10h30 et 18h30).
 
 ## À propos
 
