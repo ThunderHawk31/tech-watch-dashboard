@@ -45,10 +45,12 @@ let fontsPromise = null;
 // serves a bot-challenge page instead of CSS to Vercel's edge IPs, and satori can't
 // parse WOFF2 (Google's default format) anyway — only TTF/OTF/WOFF. These .woff
 // files are pulled from @fontsource/space-grotesk and @fontsource/dm-mono.
-async function loadLocalFont(filename) {
-  const res = await fetch(new URL(`./fonts/${filename}`, import.meta.url));
+// Each new URL() call needs a static string literal (not a variable) for Vercel's
+// bundler to detect and inline the referenced asset at build time.
+async function loadLocalFont(url) {
+  const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Bundled font not found: ${filename} (HTTP ${res.status})`);
+    throw new Error(`Bundled font not found: ${url} (HTTP ${res.status})`);
   }
   return res.arrayBuffer();
 }
@@ -56,10 +58,10 @@ async function loadLocalFont(filename) {
 function loadFonts() {
   if (!fontsPromise) {
     fontsPromise = Promise.all([
-      loadLocalFont('space-grotesk-latin-500-normal.woff'),
-      loadLocalFont('space-grotesk-latin-700-normal.woff'),
-      loadLocalFont('dm-mono-latin-400-normal.woff'),
-      loadLocalFont('dm-mono-latin-500-normal.woff'),
+      loadLocalFont(new URL('./fonts/space-grotesk-latin-500-normal.woff', import.meta.url)),
+      loadLocalFont(new URL('./fonts/space-grotesk-latin-700-normal.woff', import.meta.url)),
+      loadLocalFont(new URL('./fonts/dm-mono-latin-400-normal.woff', import.meta.url)),
+      loadLocalFont(new URL('./fonts/dm-mono-latin-500-normal.woff', import.meta.url)),
     ]).then(([sg500, sg700, dm400, dm500]) => [
       { name: 'Space Grotesk', data: sg500, weight: 500, style: 'normal' },
       { name: 'Space Grotesk', data: sg700, weight: 700, style: 'normal' },
