@@ -10,8 +10,11 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+const { URL } = require('url');
+
 export default async function handler(req, res) {
-  const slug = req.query.slug;
+  const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
+  const slug = searchParams.get('slug');
   if (!slug || !SUPABASE_KEY) {
     res.status(400).send('Missing slug');
     return;
