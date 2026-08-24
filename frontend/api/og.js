@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -16,13 +16,7 @@ export default async function handler(req, res) {
   const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
   const slug = searchParams.get('slug');
   if (!slug || !SUPABASE_KEY) {
-    res.status(400).json({
-      error: 'Missing slug',
-      debug_url: req.url,
-      debug_host: req.headers.host,
-      debug_query_object: req.query,
-      debug_has_key: !!SUPABASE_KEY,
-    });
+    res.status(400).send('Missing slug');
     return;
   }
 
