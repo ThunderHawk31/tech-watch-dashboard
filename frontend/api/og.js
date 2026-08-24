@@ -23,6 +23,30 @@ function mapSectorToImage(sector) {
   return 'default';
 }
 
+// `analysis` est un blob JSON stocké en text (titre/resume/impact_marches/...,
+// cf. api.js côté client) : on n'en garde que le résumé, le reste de l'article
+// vient des colonnes dédiées déjà sélectionnées plus bas.
+function extractResume(analysisRaw) {
+  if (!analysisRaw) return '';
+  const trimmed = analysisRaw.trimStart();
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.resume) return String(parsed.resume).trim();
+    } catch { /* pas du JSON valide, on retombe sur le texte brut */ }
+  }
+  return analysisRaw.trim();
+}
+
+function formatDateFr(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
 export default async function handler(req, res) {
   const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
   const slug = searchParams.get('slug');
@@ -32,7 +56,7 @@ export default async function handler(req, res) {
   }
 
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,impact_marches,opportunites,sector,tickers&limit=1`,
+    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,analysis,impact_marches,opportunites,points_cles,sector,tickers,published_at,url&limit=1`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
@@ -58,6 +82,17 @@ export default async function handler(req, res) {
     `https://techwatch.fr/api/og-image?title=${encodeURIComponent(article.title || 'Tech Watch')}&sector=${imageSector}&tickers=${encodeURIComponent(article.tickers || '')}`
   );
 
+  // Contenu texte réel pour les crawlers IA (GPTBot, ClaudeBot, PerplexityBot...)
+  // qui n'exécutent pas JS : sans ça, ils ne voient que les meta tags ci-dessus
+  // et un body vide, jamais l'article lui-même.
+  const resume = escapeHtml(extractResume(article.analysis));
+  const impactMarches = escapeHtml((article.impact_marches || '').trim());
+  const opportunites = escapeHtml((article.opportunites || '').trim());
+  const pointsCles = Array.isArray(article.points_cles) ? article.points_cles : [];
+  const dateStr = formatDateFr(article.published_at);
+  const meta = [dateStr, article.sector, article.tickers].filter(Boolean).map(escapeHtml).join(' · ');
+  const sourceUrl = article.url ? escapeHtml(article.url) : '';
+
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -75,7 +110,17 @@ export default async function handler(req, res) {
   <meta name="twitter:description" content="${desc}" />
   <meta name="twitter:image" content="${imageUrl}" />
 </head>
-<body></body>
+<body>
+  <article>
+    <h1>${title}</h1>
+    ${meta ? `<p>${meta}</p>` : ''}
+    ${resume ? `<p>${resume}</p>` : ''}
+    ${pointsCles.length ? `<ul>${pointsCles.map(p => `<li>${escapeHtml(String(p))}</li>`).join('')}</ul>` : ''}
+    ${impactMarches ? `<h2>Impact marchés</h2><p>${impactMarches}</p>` : ''}
+    ${opportunites ? `<h2>Opportunités</h2><p>${opportunites}</p>` : ''}
+    ${sourceUrl ? `<p><a href="${sourceUrl}">Source originale</a></p>` : ''}
+  </article>
+</body>
 </html>`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
