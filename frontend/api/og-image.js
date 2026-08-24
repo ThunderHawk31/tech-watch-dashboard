@@ -285,6 +285,6 @@ export default async function handler(req) {
     });
   } catch (error) {
     console.error('og-image error:', error);
-    return new Response('Failed to generate image', { status: 500 });
+    return new Response(`Failed to generate image: ${error?.message || error}\n${error?.stack || ''}`, { status: 500 });
   }
 }
