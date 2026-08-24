@@ -41,34 +41,25 @@ const SIGNAL_PATHS = {
 
 let fontsPromise = null;
 
-async function loadGoogleFont(family, weight) {
-  const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`;
-  const css = await fetch(cssUrl, {
-    headers: {
-      // Older UA forces Google Fonts to serve TTF instead of WOFF2, which satori can parse.
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
-    },
-  }).then((res) => res.text());
-
-  const match = css.match(/src:\s*url\(([^)]+)\)\s*format\(['"]?(?:opentype|truetype)['"]?\)/);
-  if (!match) {
-    throw new Error(`Font source not found for ${family} ${weight}. CSS snippet: ${css.slice(0, 400)}`);
+// Bundled locally rather than fetched live from Google Fonts: fonts.googleapis.com
+// serves a bot-challenge page instead of CSS to Vercel's edge IPs, and satori can't
+// parse WOFF2 (Google's default format) anyway — only TTF/OTF/WOFF. These .woff
+// files are pulled from @fontsource/space-grotesk and @fontsource/dm-mono.
+async function loadLocalFont(filename) {
+  const res = await fetch(new URL(`./fonts/${filename}`, import.meta.url));
+  if (!res.ok) {
+    throw new Error(`Bundled font not found: ${filename} (HTTP ${res.status})`);
   }
-
-  const fontRes = await fetch(match[1]);
-  if (!fontRes.ok) {
-    throw new Error(`Font file fetch failed for ${family} ${weight}: HTTP ${fontRes.status}`);
-  }
-  return fontRes.arrayBuffer();
+  return res.arrayBuffer();
 }
 
 function loadFonts() {
   if (!fontsPromise) {
     fontsPromise = Promise.all([
-      loadGoogleFont('Space+Grotesk', 500),
-      loadGoogleFont('Space+Grotesk', 700),
-      loadGoogleFont('DM+Mono', 400),
-      loadGoogleFont('DM+Mono', 500),
+      loadLocalFont('space-grotesk-latin-500-normal.woff'),
+      loadLocalFont('space-grotesk-latin-700-normal.woff'),
+      loadLocalFont('dm-mono-latin-400-normal.woff'),
+      loadLocalFont('dm-mono-latin-500-normal.woff'),
     ]).then(([sg500, sg700, dm400, dm500]) => [
       { name: 'Space Grotesk', data: sg500, weight: 500, style: 'normal' },
       { name: 'Space Grotesk', data: sg700, weight: 700, style: 'normal' },
