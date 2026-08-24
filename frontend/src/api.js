@@ -284,6 +284,32 @@ export async function fetchArticleById(id) {
   }
 }
 
+export async function fetchArticleBySlug(slug) {
+  if (!slug || typeof slug !== 'string') return null;
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    if (!rows.length) return null;
+    const article = mapArticle(rows[0]);
+    article.actions = typeof article.actions === 'string'
+      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
+      : (Array.isArray(article.actions) ? article.actions : []);
+    return article;
+  } catch (error) {
+    console.error('fetchArticleBySlug error:', error);
+    return null;
+  }
+}
+
 export async function fetchStats() {
   try {
     const cachedData = getCache();
