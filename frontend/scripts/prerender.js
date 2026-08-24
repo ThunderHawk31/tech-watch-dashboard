@@ -12,7 +12,15 @@
 // priorité sur sa réécriture SPA automatique (le comportement normal de
 // navigation client-side pour les vrais visiteurs n'est pas affecté).
 
-const puppeteer = require("puppeteer");
+// puppeteer-core + @sparticuz/chromium (pas le paquet `puppeteer` complet) :
+// le Chromium embarqué par `puppeteer` a besoin de libs système
+// (libnspr4.so...) absentes du conteneur de build Vercel — testé, ça
+// plante au lancement avec "error while loading shared libraries". Le
+// binaire de @sparticuz/chromium est compilé spécifiquement pour tourner
+// sans ces dépendances sur Lambda/Vercel.
+const puppeteer = require("puppeteer-core");
+// Paquet publié en ESM ; require() le range sous .default via l'interop CJS.
+const chromium = require("@sparticuz/chromium").default;
 const httpServer = require("http-server");
 const path = require("path");
 const fs = require("fs");
@@ -70,8 +78,9 @@ async function main() {
   console.log(`Serveur local sur http://localhost:${PORT}`);
 
   const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+    headless: true,
   });
 
   try {
