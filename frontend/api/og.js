@@ -12,6 +12,17 @@ function escapeHtml(str) {
 
 const { URL } = require('url');
 
+// techwatch_articles.sector holds: IA, Cybersécurité, Tech, Crypto, Finance,
+// Énergie, Santé, Autre. og-image.js only has dedicated art for crypto/ia/
+// semi-conducteurs (the last one has no matching sector value today), so
+// everything else falls back to its generic sector-less design.
+function mapSectorToImage(sector) {
+  const s = (sector || '').toLowerCase();
+  if (s === 'crypto') return 'crypto';
+  if (s === 'ia') return 'ia';
+  return 'default';
+}
+
 export default async function handler(req, res) {
   const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
   const slug = searchParams.get('slug');
@@ -21,7 +32,7 @@ export default async function handler(req, res) {
   }
 
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,impact_marches,opportunites&limit=1`,
+    `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,impact_marches,opportunites,sector,tickers&limit=1`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
@@ -42,6 +53,11 @@ export default async function handler(req, res) {
   desc = escapeHtml(desc);
   const canonical = `https://techwatch.fr/article/${slug}`;
 
+  const imageSector = mapSectorToImage(article.sector);
+  const imageUrl = escapeHtml(
+    `https://techwatch.fr/api/og-image?title=${encodeURIComponent(article.title || 'Tech Watch')}&sector=${imageSector}&tickers=${encodeURIComponent(article.tickers || '')}`
+  );
+
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -51,9 +67,13 @@ export default async function handler(req, res) {
   <meta property="og:description" content="${desc}" />
   <meta property="og:url" content="${canonical}" />
   <meta property="og:type" content="article" />
+  <meta property="og:image" content="${imageUrl}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${desc}" />
+  <meta name="twitter:image" content="${imageUrl}" />
 </head>
 <body></body>
 </html>`;
