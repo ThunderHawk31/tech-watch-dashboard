@@ -49,6 +49,16 @@ const ROUTES = [
     out: "tendances/index.html",
     ready: '[data-testid="sector-heat-item"], [data-testid="sector-heat-empty"]',
   },
+  {
+    path: "/stats",
+    out: "stats/index.html",
+    ready: '[data-testid="stats-content"]',
+  },
+  {
+    path: "/digest",
+    out: "digest/index.html",
+    ready: '[data-testid="digest-card"], [data-testid="no-digests"]',
+  },
 ];
 
 async function waitForReady(page, selector) {
