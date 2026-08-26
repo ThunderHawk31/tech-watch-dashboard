@@ -67,6 +67,18 @@ export const filtersSchema = Joi.object({
       'any.only': 'Tri invalide. Valeurs acceptées : recent, importance'
     }),
 
+  // Ticker filtré au clic sur une carte article (rétrocompatibilité : absent du schéma
+  // jusqu'ici, donc supprimé silencieusement par stripUnknown avant d'atteindre l'API)
+  ticker: Joi.string()
+    .trim()
+    .max(20)
+    .allow('', null)
+    .optional()
+    .default('')
+    .messages({
+      'string.max': 'Le ticker ne peut pas dépasser 20 caractères'
+    }),
+
   // Pagination (limité à 1-1000)
   page: Joi.number()
     .integer()
