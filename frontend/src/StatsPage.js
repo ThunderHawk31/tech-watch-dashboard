@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchArticles as fetchArticlesAPI } from './api';
+import { fetchStats, fetchAllArticlesForExport } from './api';
 import { Download, FileJson } from 'lucide-react';
 import { exportToCSV, exportToJSON } from './lib/exportUtils';
 import { toast } from "sonner";
@@ -16,15 +16,14 @@ const sectorConfig = Object.fromEntries(
 const StatsPage = () => {
   const seo = useSEO({ title: 'Statistiques', description: 'Répartition des articles par secteur, sentiment et importance — tableau de bord veille tech.' });
   const [stats, setStats] = useState(null);
-  const [allArticles, setAllArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const data = await fetchArticlesAPI({}, 1);
-        setStats(data.stats);
-        setAllArticles(data.articles);
+        const data = await fetchStats();
+        setStats(data);
       } catch (e) {
         toast.error("Erreur lors du chargement des stats");
       } finally {
@@ -34,19 +33,28 @@ const StatsPage = () => {
     loadStats();
   }, []);
 
-  const handleExportCSV = () => {
-    exportToCSV(allArticles, 'veille-tech');
-    toast.success(`${allArticles.length} articles exportés en CSV !`, {
-      icon: "📥",
-    });
+  // Fetch complet (toutes colonnes, tous articles) différé au clic — la page Stats
+  // elle-même ne charge que les stats légères au montage.
+  const handleExport = async (kind) => {
+    setExporting(true);
+    try {
+      const { articles } = await fetchAllArticlesForExport();
+      if (kind === 'csv') {
+        exportToCSV(articles, 'veille-tech');
+        toast.success(`${articles.length} articles exportés en CSV !`, { icon: "📥" });
+      } else {
+        exportToJSON(articles, 'veille-tech');
+        toast.success(`${articles.length} articles exportés en JSON !`, { icon: "💾" });
+      }
+    } catch (e) {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const handleExportJSON = () => {
-    exportToJSON(allArticles, 'veille-tech');
-    toast.success(`${allArticles.length} articles exportés en JSON !`, {
-      icon: "💾",
-    });
-  };
+  const handleExportCSV = () => handleExport('csv');
+  const handleExportJSON = () => handleExport('json');
 
   if (loading) {
     return (
@@ -79,16 +87,18 @@ const StatsPage = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+            disabled={exporting}
+            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Exporter CSV</span>
             <span className="sm:hidden">CSV</span>
           </button>
-          
+
           <button
             onClick={handleExportJSON}
-            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+            disabled={exporting}
+            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileJson className="w-4 h-4" />
             <span className="hidden sm:inline">JSON</span>

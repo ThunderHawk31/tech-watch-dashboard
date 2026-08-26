@@ -278,3 +278,32 @@ export async function fetchStats() {
     return null;
   }
 }
+
+// Fetch complet non paginé, réservé à l'export CSV/JSON (StatsPage) — volontairement
+// pas appelé ailleurs pour ne pas retomber sur un fetch de toute la table par défaut
+export async function fetchAllArticlesForExport() {
+  const response = await fetch(
+    `${SUPABASE_URL}?select=${ARTICLE_COLUMNS}&order=published_at.desc`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'count=exact'
+      }
+    }
+  );
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const rows = await response.json();
+  const contentRange = response.headers.get('content-range');
+  const total = contentRange
+    ? parseInt(contentRange.split('/')[1], 10) || rows.length
+    : rows.length;
+
+  if (total > rows.length) {
+    // db-max-rows côté PostgREST (ou une future volumétrie) peut tronquer sans erreur
+    console.warn(`⚠️ Export tronqué : ${rows.length}/${total} articles récupérés`);
+  }
+
+  return { articles: rows.map(mapArticle), total };
+}
