@@ -1,10 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 
 const APP_NAME = 'Tech Watch';
-const BASE_URL = 'https://techwatch-dashboard.vercel.app'; // à ajuster si besoin
+export const BASE_URL = 'https://www.techwatch.fr'; // domaine de prod — doit matcher sitemap.js
 const DEFAULT_DESC =
   'Veille technologique automatisée par IA — actualités IA, Tech, Finance, Crypto analysées 2×/jour.';
-const DEFAULT_IMAGE = `${BASE_URL}/og-default.png`;
+const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`; // og-default.png n'existe pas dans /public
 
 /**
  * useSEO — renvoie un élément <Helmet> prêt à l'emploi.
@@ -20,7 +20,13 @@ export function useSEO({ title, description, image, canonical, type = 'website' 
   const fullTitle = title ? `${title} — ${APP_NAME}` : APP_NAME;
   const desc = description || DEFAULT_DESC;
   const img = image || DEFAULT_IMAGE;
-  const url = canonical || (typeof window !== 'undefined' ? window.location.href : BASE_URL);
+  // Ne jamais utiliser window.location.href ici : pendant le build de
+  // prerender.js, Puppeteer visite le site sur un serveur local
+  // (http://localhost:PORT), donc window.location.href pointerait vers
+  // localhost dans le HTML statique généré. On ancre toujours sur le
+  // domaine de prod et on n'emprunte que le chemin à window.location.
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  const url = canonical || `${BASE_URL}${path}`;
 
   return (
     <Helmet>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { BASE_URL } from "../hooks/useSEO";
 import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
 import { fetchArticles as fetchArticlesAPI, fetchArticleById, invalidateCache } from "../api";
@@ -62,8 +63,8 @@ const HomePage = () => {
     ? excerptFromAnalyse(selectedArticle.analyse)
     : 'Analyses automatiques par IA — IA, Tech, Finance, Crypto. Mis à jour 2×/jour.';
   const seoUrl = selectedArticle
-    ? `${window.location.origin}/?article=${selectedArticle.id}`
-    : window.location.origin;
+    ? `${BASE_URL}/?article=${selectedArticle.id}`
+    : BASE_URL;
 
   const handleOpenModal = (article) => {
     setSelectedArticle(article);
