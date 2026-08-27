@@ -58,10 +58,10 @@ const HomePage = () => {
   // SEO dynamique : si un article est ouvert via /?article=UUID, injecter ses OG tags
   const seoTitle = selectedArticle
     ? selectedArticle.titre || 'Article — Tech Watch'
-    : 'Veille Technologique IA & Tech';
+    : 'Veille Tech, IA & Finance automatisée par IA';
   const seoDesc = selectedArticle
     ? excerptFromAnalyse(selectedArticle.analyse)
-    : 'Analyses automatiques par IA — IA, Tech, Finance, Crypto. Mis à jour 2×/jour.';
+    : "TechWatch agrège et analyse en temps réel l'actualité IA, Tech, Finance, Crypto et Cybersécurité grâce à l'intelligence artificielle — mis à jour deux fois par jour.";
   const seoUrl = selectedArticle
     ? `${BASE_URL}/?article=${selectedArticle.id}`
     : BASE_URL;
@@ -172,13 +172,15 @@ const HomePage = () => {
       </Helmet>
       <div className="text-center mb-12">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-          Veille Technologique
+          Veille Tech, IA & Finance
           <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-            IA & Tech
+            automatisée par IA
           </span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Analyses automatiques par IA — Mis à jour 2×/jour
+          TechWatch agrège et analyse en temps réel l'actualité IA, Tech, Finance, Crypto et
+          Cybersécurité grâce à l'intelligence artificielle — mis à jour deux fois par jour,
+          avec score d'importance et impact marchés pour chaque article.
         </p>
         {articles.length > 0 && (() => {
           const last = new Date(articles[0].date);

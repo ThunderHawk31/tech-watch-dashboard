@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 const APP_NAME = 'Tech Watch';
 export const BASE_URL = 'https://www.techwatch.fr'; // domaine de prod — doit matcher sitemap.js
 const DEFAULT_DESC =
-  'Veille technologique automatisée par IA — actualités IA, Tech, Finance, Crypto analysées 2×/jour.';
+  "TechWatch agrège et analyse en temps réel l'actualité IA, Tech, Finance, Crypto et Cybersécurité grâce à l'intelligence artificielle — mis à jour deux fois par jour.";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`; // og-default.png n'existe pas dans /public
 
 /**
