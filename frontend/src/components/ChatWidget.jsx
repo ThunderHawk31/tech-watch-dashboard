@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 const WEBHOOK_URL = '/api/chat';
 
@@ -182,7 +183,10 @@ export default function ChatWidget() {
         body: JSON.stringify({ chatInput: text, sessionId: sessionId.current }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.error || `HTTP ${res.status}`);
+      }
 
       const data = await res.json();
       const agentText =
@@ -195,13 +199,12 @@ export default function ChatWidget() {
       ]);
     } catch (err) {
       console.error('[ChatWidget] fetch error:', err);
+      const text = !err.message.startsWith('HTTP')
+        ? err.message
+        : '⚠️ Une erreur est survenue. Vérifiez votre connexion et réessayez.';
       setMessages((prev) => [
         ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'error',
-          text: '⚠️ Une erreur est survenue. Vérifiez votre connexion et réessayez.',
-        },
+        { id: crypto.randomUUID(), role: 'error', text },
       ]);
     } finally {
       setLoading(false);
@@ -248,6 +251,41 @@ export default function ChatWidget() {
         #chat-input:focus {
           border-color: hsl(var(--ring));
           box-shadow: 0 0 0 2px hsl(var(--ring) / 0.25);
+        }
+        .chat-markdown p {
+          margin: 0 0 0.5em;
+        }
+        .chat-markdown p:last-child {
+          margin-bottom: 0;
+        }
+        .chat-markdown strong {
+          font-weight: 600;
+        }
+        .chat-markdown ul,
+        .chat-markdown ol {
+          margin: 0.3em 0;
+          padding-left: 1.1em;
+        }
+        .chat-markdown li {
+          margin-bottom: 0.15em;
+        }
+        .chat-markdown h1,
+        .chat-markdown h2,
+        .chat-markdown h3 {
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin: 0.5em 0 0.3em;
+        }
+        .chat-markdown h1:first-child,
+        .chat-markdown h2:first-child,
+        .chat-markdown h3:first-child {
+          margin-top: 0;
+        }
+        .chat-markdown code {
+          background: hsl(var(--background));
+          padding: 0.1em 0.35em;
+          border-radius: 3px;
+          font-size: 0.85em;
         }
       `}</style>
 
@@ -314,8 +352,8 @@ export default function ChatWidget() {
                 );
               }
               return (
-                <div key={msg.id} style={styles.bubbleAgent}>
-                  {msg.text}
+                <div key={msg.id} className="chat-markdown" style={styles.bubbleAgent}>
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
               );
             })}
