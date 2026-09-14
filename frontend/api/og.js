@@ -91,7 +91,13 @@ export default async function handler(req, res) {
   const pointsCles = Array.isArray(article.points_cles) ? article.points_cles : [];
   const dateStr = formatDateFr(article.published_at);
   const meta = [dateStr, article.sector, article.tickers].filter(Boolean).map(escapeHtml).join(' · ');
-  const sourceUrl = article.url ? escapeHtml(article.url) : '';
+  let sourceUrl = '';
+  try {
+    const parsed = new URL(article.url || '');
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      sourceUrl = escapeHtml(parsed.toString());
+    }
+  } catch { /* URL absente ou invalide, pas de lien source */ }
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
