@@ -1,4 +1,4 @@
-const N8N_URL = 'https://thunderwiz.app.n8n.cloud/webhook/5e4c965c-6c3a-473e-aad0-119e47ec845c/chat';
+const N8N_URL = process.env.N8N_CHAT_WEBHOOK_URL;
 
 // Rate limiting en mémoire par IP. Réinitialisé quand l'instance serverless
 // est recyclée — protection best-effort mais suffisante contre le scripting
@@ -29,6 +29,9 @@ setInterval(() => {
 }, RATE_WINDOW_MS).unref?.();
 
 export default async function handler(req, res) {
+  if (!N8N_URL) {
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
