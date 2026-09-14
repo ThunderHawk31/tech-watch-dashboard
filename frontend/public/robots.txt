@@ -4,14 +4,27 @@
 User-agent: *
 Allow: /
 
-# Sitemap (optionnel, à créer plus tard)
-Sitemap: https://ton-site.vercel.app/sitemap.xml
+# Sitemap
+Sitemap: https://www.techwatch.fr/sitemap.xml
 
 # Règles spécifiques pour les bots courants
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
+Allow: /
+
+# Crawlers IA
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
 Allow: /
 
 # Délai entre les requêtes (en secondes)

@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 function escapeXml(str) {
   if (!str) return '';

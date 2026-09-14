@@ -232,7 +232,7 @@ const HomePage = () => {
       {loading ? (
         <ArticlesSkeleton totalArticles={displayTotal} />
       ) : articles.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="text-center py-16" data-testid="no-articles">
           <Info className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-medium mb-2">Aucun article trouvé</h3>
           <p className="text-muted-foreground mb-4">Essayez de modifier vos filtres de recherche</p>
