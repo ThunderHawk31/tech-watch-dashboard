@@ -37,9 +37,12 @@ const DEFAULT_READY_SELECTOR = "#root h1, #root main";
 
 // Routes publiques à pré-rendre. Ajouter ici toute nouvelle page marketing.
 const ROUTES = [
+  // OnboardingPage (packs + sources perso) : contenu statique, pas de fetch
+  // async, le sélecteur par défaut (#root h1, #root main) suffit.
+  { path: "/", out: "index.html" },
   {
-    path: "/",
-    out: "index.html",
+    path: "/app",
+    out: "app/index.html",
     ready: '[data-testid="article-card"], [data-testid="no-articles"]',
   },
   { path: "/about", out: "about/index.html" },

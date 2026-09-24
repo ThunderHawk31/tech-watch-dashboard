@@ -14,6 +14,7 @@ import { HeaderNew as Header } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
+import OnboardingPage from './pages/OnboardingPage';
 import AboutPage from './pages/AboutPage';
 import FavoritesPage from './pages/FavoritesPage';
 import TendancesPage from './pages/TendancesPage';
@@ -34,7 +35,8 @@ function App() {
       <Header />
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<OnboardingPage />} />
+          <Route path="/app" element={<HomePage />} />
           <Route
             path="/stats"
             element={
