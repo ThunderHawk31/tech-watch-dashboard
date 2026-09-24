@@ -80,7 +80,7 @@ class ErrorBoundary extends Component {
               Recharger la page
             </button>
             <a
-              href="/"
+              href="/app"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
                          border border-border text-foreground font-medium text-sm
                          hover:bg-muted transition-colors"
