@@ -69,6 +69,7 @@ function setCache(data) {
 function mapArticle(row) {
   return {
     id: row.article_id,
+    slug: row.slug || '',
     titre: row.title || '',
     titre_en: row.title_en || '',
     date: row.published_at,
@@ -111,7 +112,7 @@ async function fetchFromSupabase() {
   console.log('🔄 Récupération des données depuis Supabase...');
   
   const response = await fetch(
-    `${SUPABASE_URL}?select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&order=published_at.desc`,
+    `${SUPABASE_URL}?select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&order=published_at.desc`,
     {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -262,7 +263,7 @@ export async function fetchArticleById(id) {
 
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
+      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
@@ -288,7 +289,7 @@ export async function fetchArticleBySlug(slug) {
   if (!slug || typeof slug !== 'string') return null;
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?slug=eq.${encodeURIComponent(slug)}&select=article_id,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
+      `${SUPABASE_URL}?slug=eq.${encodeURIComponent(slug)}&select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
