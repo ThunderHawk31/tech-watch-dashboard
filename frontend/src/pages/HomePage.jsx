@@ -62,7 +62,7 @@ const HomePage = () => {
     ? excerptFromAnalyse(selectedArticle.analyse)
     : 'Analyses automatiques par IA — IA, Tech, Finance, Crypto. Mis à jour 2×/jour.';
   const seoUrl = selectedArticle
-    ? `${window.location.origin}/?article=${selectedArticle.id}`
+    ? `${window.location.origin}/app?article=${selectedArticle.id}`
     : window.location.origin;
 
   const handleOpenModal = (article) => {
@@ -173,7 +173,7 @@ const HomePage = () => {
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
           Veille Technologique
           <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-            IA & Tech
+            IA, Cyber & Tech
           </span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
