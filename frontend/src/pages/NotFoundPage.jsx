@@ -52,7 +52,7 @@ const NotFoundPage = () => {
           </Button>
 
           <Button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/app')}
             className="gap-2"
           >
             <Home className="w-4 h-4" />

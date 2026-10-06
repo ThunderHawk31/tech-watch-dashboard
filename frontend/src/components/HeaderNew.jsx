@@ -37,7 +37,7 @@ const location = useLocation();
               </button>
 
               {/* Desktop: Logo normal comme avant */}
-              <Link to="/" className="hidden md:flex items-center gap-3">
+              <Link to="/app" className="hidden md:flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                   <Zap className="w-5 h-5 text-white" />
                 </div>
@@ -48,9 +48,9 @@ const location = useLocation();
             {/* Navigation desktop - cachée sur mobile (comme avant) */}
             <nav className="hidden md:flex items-center gap-1">
               <Link
-                to="/"
+                to="/app"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  isActive('/app') ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 Accueil

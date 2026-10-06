@@ -17,7 +17,7 @@ export const NavigationMenu = ({ isOpen, setIsOpen }) => {
 
   const menuItems = [
     {
-      path: "/",
+      path: "/app",
       label: "Accueil",
       icon: Home,
       description: "Derniers articles"

@@ -24,7 +24,7 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide">Navigation</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Accueil</Link></li>
+              <li><Link to="/app" className="text-muted-foreground hover:text-foreground transition-colors">Accueil</Link></li>
               <li><Link to="/stats" className="text-muted-foreground hover:text-foreground transition-colors">Statistiques</Link></li>
               <li><Link to="/favoris" className="text-muted-foreground hover:text-foreground transition-colors">Mes Favoris</Link></li>
               <li><Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">À propos</Link></li>

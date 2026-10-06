@@ -33,10 +33,16 @@ Via Tech Watch - Veille IA & Tech automatisée`;
     return text;
   };
 
-  // Générer l'URL de partage — lien direct vers l'article sur TechWatch
+  // Générer l'URL de partage — lien direct vers l'article sur TechWatch.
+  // Passe par /article/:slug (route canonique gérée par og.js pour les bots
+  // Discord/Slack/etc., cf. vercel.json) plutôt que /app?article=<uuid>, qui
+  // ne déclenche jamais la génération des meta tags OG pour un article précis.
   const getShareUrl = () => {
+    if (article?.slug) {
+      return `${window.location.origin}/article/${article.slug}`;
+    }
     if (article?.id) {
-      return `${window.location.origin}/?article=${article.id}`;
+      return `${window.location.origin}/app?article=${article.id}`;
     }
     return window.location.origin;
   };

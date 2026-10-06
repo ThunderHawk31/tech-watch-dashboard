@@ -115,7 +115,9 @@ const ArticleModal = ({ article, open, onClose }) => {
             size="icon"
             className="h-11 w-11"
             onClick={() => {
-              const link = `${window.location.origin}/?article=${article.id}`;
+              const link = article.slug
+                ? `${window.location.origin}/article/${article.slug}`
+                : `${window.location.origin}/app?article=${article.id}`;
               navigator.clipboard.writeText(link);
               toast.success("Lien TechWatch copié !");
             }}

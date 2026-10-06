@@ -46,7 +46,10 @@ export default async function handler(req, res) {
   // scripts/prerender.js (pages de contenu, pas les outils personnalisés
   // comme /favoris ou /watchlist).
   const staticUrls = [
-    { loc: 'https://www.techwatch.fr/', lastmod: today, changefreq: 'daily', priority: '1.0' },
+    // "/" est désormais la page de personnalisation (packs + sources perso),
+    // le contenu article se trouve sur "/app" — cf. ROUTES dans prerender.js.
+    { loc: 'https://www.techwatch.fr/', lastmod: today, changefreq: 'monthly', priority: '0.8' },
+    { loc: 'https://www.techwatch.fr/app', lastmod: today, changefreq: 'daily', priority: '1.0' },
     { loc: 'https://www.techwatch.fr/about', lastmod: today, changefreq: 'monthly', priority: '0.5' },
     { loc: 'https://www.techwatch.fr/tendances', lastmod: today, changefreq: 'daily', priority: '0.7' },
     { loc: 'https://www.techwatch.fr/stats', lastmod: today, changefreq: 'daily', priority: '0.6' },

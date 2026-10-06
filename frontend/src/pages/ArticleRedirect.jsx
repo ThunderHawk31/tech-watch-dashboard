@@ -9,9 +9,9 @@ export default function ArticleRedirect() {
   useEffect(() => {
     fetchArticleBySlug(slug).then((article) => {
       if (article?.id) {
-        navigate(`/?article=${article.id}`, { replace: true });
+        navigate(`/app?article=${article.id}`, { replace: true });
       } else {
-        navigate("/", { replace: true });
+        navigate("/app", { replace: true });
       }
     });
   }, [slug, navigate]);

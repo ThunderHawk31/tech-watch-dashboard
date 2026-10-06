@@ -23,7 +23,7 @@ const FavoritesPage = () => {
             Vous n'avez pas encore ajouté d'articles à vos favoris.
             Cliquez sur l'étoile ⭐ sur les cartes pour en ajouter !
           </p>
-          <Link to="/">
+          <Link to="/app">
             <Button className="gap-2">
               <Zap className="w-4 h-4" />
               Découvrir des articles
