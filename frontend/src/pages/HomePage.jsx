@@ -12,6 +12,7 @@ import FiltersBar from "../components/FiltersBar";
 import FiltersBarSkeleton from "../components/FiltersBarSkeleton";
 import StatsOverview from "../components/StatsOverview";
 import ArticlesSkeleton from "../components/ArticlesSkeleton";
+import { SITE_URL } from "../lib/siteUrl";
 // Extrait le premier paragraphe du champ analyse pour og:description
 function excerptFromAnalyse(analyse = '', maxLen = 150) {
   let text = analyse;
@@ -62,8 +63,8 @@ const HomePage = () => {
     ? excerptFromAnalyse(selectedArticle.analyse)
     : 'Analyses automatiques par IA — IA, Tech, Finance, Crypto. Mis à jour 2×/jour.';
   const seoUrl = selectedArticle
-    ? `${window.location.origin}/app?article=${selectedArticle.id}`
-    : window.location.origin;
+    ? `${SITE_URL}/app?article=${selectedArticle.id}`
+    : SITE_URL;
 
   const handleOpenModal = (article) => {
     setSelectedArticle(article);

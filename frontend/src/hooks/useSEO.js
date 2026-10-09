@@ -1,10 +1,10 @@
 import { Helmet } from 'react-helmet-async';
+import { SITE_URL } from '../lib/siteUrl';
 
 const APP_NAME = 'Tech Watch';
-const BASE_URL = 'https://techwatch-dashboard.vercel.app'; // à ajuster si besoin
 const DEFAULT_DESC =
   'Veille technologique automatisée par IA — actualités IA, Tech, Finance, Crypto analysées 2×/jour.';
-const DEFAULT_IMAGE = `${BASE_URL}/og-default.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 /**
  * useSEO — renvoie un élément <Helmet> prêt à l'emploi.
@@ -20,7 +20,7 @@ export function useSEO({ title, description, image, canonical, type = 'website' 
   const fullTitle = title ? `${title} — ${APP_NAME}` : APP_NAME;
   const desc = description || DEFAULT_DESC;
   const img = image || DEFAULT_IMAGE;
-  const url = canonical || (typeof window !== 'undefined' ? window.location.href : BASE_URL);
+  const url = canonical || (typeof window !== 'undefined' ? `${SITE_URL}${window.location.pathname}` : SITE_URL);
 
   return (
     <Helmet>
