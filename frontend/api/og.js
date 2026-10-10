@@ -12,16 +12,7 @@ function escapeHtml(str) {
 
 const { URL } = require('url');
 
-// techwatch_articles.sector holds: IA, Cybersécurité, Tech, Crypto, Finance,
-// Énergie, Santé, Autre. og-image.js only has dedicated art for crypto/ia/
-// semi-conducteurs (the last one has no matching sector value today), so
-// everything else falls back to its generic sector-less design.
-function mapSectorToImage(sector) {
-  const s = (sector || '').toLowerCase();
-  if (s === 'crypto') return 'crypto';
-  if (s === 'ia') return 'ia';
-  return 'default';
-}
+const SLUG_RE = /^[a-z0-9-]{1,200}$/;
 
 // `analysis` est un blob JSON stocké en text (titre/resume/impact_marches/...,
 // cf. api.js côté client) : on n'en garde que le résumé, le reste de l'article
@@ -50,7 +41,7 @@ function formatDateFr(iso) {
 export default async function handler(req, res) {
   const { searchParams } = new URL(req.url, `https://${req.headers.host}`);
   const slug = searchParams.get('slug');
-  if (!slug || !SUPABASE_KEY) {
+  if (!slug || !SLUG_RE.test(slug) || !SUPABASE_KEY) {
     res.status(400).send('Missing slug');
     return;
   }
@@ -75,12 +66,9 @@ export default async function handler(req, res) {
   let desc = String(article.impact_marches || article.opportunites || '').replace(/\s+/g, ' ').trim();
   if (desc.length > 155) desc = desc.slice(0, 155).replace(/\s+\S*$/, '') + '…';
   desc = escapeHtml(desc);
-  const canonical = `https://techwatch.fr/article/${slug}`;
+  const canonical = `https://techwatch.fr/article/${encodeURIComponent(slug)}`;
 
-  const imageSector = mapSectorToImage(article.sector);
-  const imageUrl = escapeHtml(
-    `https://techwatch.fr/api/og-image?title=${encodeURIComponent(article.title || 'Tech Watch')}&sector=${imageSector}&tickers=${encodeURIComponent(article.tickers || '')}`
-  );
+  const imageUrl = `https://techwatch.fr/api/og-image?slug=${encodeURIComponent(slug)}`;
 
   // Contenu texte réel pour les crawlers IA (GPTBot, ClaudeBot, PerplexityBot...)
   // qui n'exécutent pas JS : sans ça, ils ne voient que les meta tags ci-dessus

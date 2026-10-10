@@ -1,4 +1,7 @@
 const N8N_URL = process.env.N8N_CHAT_WEBHOOK_URL;
+// Optionnel : "utilisateur:motdepasse" du Basic Auth activé sur le Chat Trigger
+// n8n. Sans lui, quiconque connaît l'URL du webhook contourne ce rate limit.
+const N8N_AUTH = process.env.N8N_CHAT_AUTH;
 
 // Rate limiting en mémoire par IP. Réinitialisé quand l'instance serverless
 // est recyclée — protection best-effort mais suffisante contre le scripting
@@ -6,8 +9,21 @@ const N8N_URL = process.env.N8N_CHAT_WEBHOOK_URL;
 const RATE_LIMIT = 10;              // requêtes max par fenêtre
 const RATE_WINDOW_MS = 60 * 1000;   // fenêtre d'1 minute
 const MAX_MESSAGE_CHARS = 1000;
+// Plafond global par instance : filet contre un attaquant qui varie les IP.
+// Le vrai plafond doit être posé côté Vercel (WAF) et Anthropic (limite de dépense).
+const GLOBAL_LIMIT = 200;
+const GLOBAL_WINDOW_MS = 60 * 60 * 1000;
+const SESSION_ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 
 const hits = new Map();
+let globalHits = { start: Date.now(), count: 0 };
+
+function isGloballyLimited() {
+  const now = Date.now();
+  if (now - globalHits.start > GLOBAL_WINDOW_MS) globalHits = { start: now, count: 0 };
+  globalHits.count += 1;
+  return globalHits.count > GLOBAL_LIMIT;
+}
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -37,7 +53,7 @@ export default async function handler(req, res) {
   }
 
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
-  if (isRateLimited(ip)) {
+  if (isRateLimited(ip) || isGloballyLimited()) {
     return res.status(429).json({ error: 'Trop de requêtes, réessayez dans une minute.' });
   }
 
@@ -49,21 +65,26 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: `Message trop long (max ${MAX_MESSAGE_CHARS} caractères)` });
   }
 
+  // On ne transmet que les champs attendus : tout le reste du corps est ignoré.
+  const rawSession = req.body?.sessionId;
+  const sessionId = typeof rawSession === 'string' && SESSION_ID_RE.test(rawSession) ? rawSession : undefined;
+  const headers = { 'Content-Type': 'application/json' };
+  if (N8N_AUTH) headers.Authorization = `Basic ${Buffer.from(N8N_AUTH).toString('base64')}`;
+
   try {
     const response = await fetch(N8N_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body),
+      headers,
+      body: JSON.stringify({ chatInput: message, sessionId }),
     });
 
     if (!response.ok) {
       const text = await response.text();
       console.error(`[chat] n8n ${response.status}:`, text.slice(0, 300));
-      return res.status(502).json({ error: `n8n returned ${response.status}` });
+      return res.status(502).json({ error: 'Service de chat indisponible' });
     }
 
     const data = await response.json();
-    console.log('[chat] n8n raw response:', JSON.stringify(data));
 
     // n8n chatTrigger peut retourner [{output}] ou {output}
     const output = Array.isArray(data) ? data[0]?.output : data?.output;
