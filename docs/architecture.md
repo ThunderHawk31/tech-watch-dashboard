@@ -97,11 +97,11 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Sched as Schedule Trigger<br/>(10h30 / 18h30 / 3h)
-    participant Gmail as Gmail Trigger<br/>(par newsletter)
-    participant RSS as Workflow RSS<br/>(Analyseur Article Finance-Auto RSS copy)
-    participant NL as Sub-workflow<br/>TechWatch — Newsletter
-    participant SI as Sub-workflow<br/>TechWatch — Scoring & Insertion
+    participant Sched as Schedule Trigger (10h30/18h30/3h)
+    participant Gmail as Gmail Trigger (par newsletter)
+    participant RSS as Workflow RSS (Analyseur Article Finance-Auto RSS copy)
+    participant NL as Sub-workflow TechWatch Newsletter
+    participant SI as Sub-workflow TechWatch Scoring and Insertion
     participant Claude as Claude API
     participant SB as Supabase
     participant Alert as Gmail + Discord
