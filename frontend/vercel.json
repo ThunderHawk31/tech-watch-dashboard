@@ -6,7 +6,8 @@
       "destination": "/api/og?slug=:slug"
     },
     { "source": "/article/:slug", "destination": "/app" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/rss.xml", "destination": "/api/rss" }
   ],
   "headers": [
     {
