@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 const APP_NAME = 'Tech Watch';
-const BASE_URL = 'https://techwatch-dashboard.vercel.app'; // à ajuster si besoin
+const BASE_URL = 'https://techwatch.fr';
 const DEFAULT_DESC =
   'Veille technologique automatisée par IA — actualités IA, Tech, Finance, Crypto analysées 2×/jour.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-default.png`;
@@ -20,7 +20,10 @@ export function useSEO({ title, description, image, canonical, type = 'website' 
   const fullTitle = title ? `${title} — ${APP_NAME}` : APP_NAME;
   const desc = description || DEFAULT_DESC;
   const img = image || DEFAULT_IMAGE;
-  const url = canonical || (typeof window !== 'undefined' ? window.location.href : BASE_URL);
+  // BASE_URL + pathname (jamais window.location.href) : en prérendu (prerender.js),
+  // Puppeteer visite http://localhost:<port random>/..., donc .href fuiterait ce
+  // port dans le HTML statique servi aux bots.
+  const url = canonical || `${BASE_URL}${typeof window !== 'undefined' ? window.location.pathname : ''}`;
 
   return (
     <Helmet>
