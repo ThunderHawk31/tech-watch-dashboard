@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
-import { fetchArticles as fetchArticlesAPI, fetchArticleById, fetchStats } from "../api";
+import { fetchArticles as fetchArticlesAPI, fetchArticleById, fetchStats, fetchLatestArticleDate } from "../api";
 import { sectorConfig } from "../lib/config";
 import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
@@ -26,6 +26,7 @@ function excerptFromAnalyse(analyse = '', maxLen = 150) {
 const HomePage = () => {
   const [articles, setArticles] = useState([]);
   const [stats, setStats] = useState(null);
+  const [latestDate, setLatestDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -104,10 +105,12 @@ const HomePage = () => {
     });
   }, []); // eslint-disable-line
 
-  // Les stats globales (StatsOverview) sont indépendantes des filtres/page
-  // affichés : chargées une fois à part, pas à chaque fetchArticles.
+  // Les stats globales (StatsOverview) et la date du dernier article ingéré
+  // sont indépendantes des filtres/page affichés : chargées une fois à
+  // part, pas à chaque fetchArticles.
   useEffect(() => {
     fetchStats().then(setStats).catch(() => setStats(null));
+    fetchLatestArticleDate().then(setLatestDate).catch(() => setLatestDate(null));
   }, []);
 
   const fetchArticles = async (targetPage = page) => {
@@ -145,13 +148,15 @@ const HomePage = () => {
   const handleManualRefresh = async () => {
     setRefreshing(true);
     try {
-      const [data, freshStats] = await Promise.all([
+      const [data, freshStats, freshLatestDate] = await Promise.all([
         fetchArticlesAPI(filters, page),
-        fetchStats()
+        fetchStats(),
+        fetchLatestArticleDate()
       ]);
       setArticles(data.articles);
       setTotalCount(data.total);
       setStats(freshStats);
+      setLatestDate(freshLatestDate);
       toast.success("Articles actualisés");
     } catch (error) {
       console.error('Erreur refresh:', error);
@@ -187,8 +192,8 @@ const HomePage = () => {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Analyses automatiques par IA — Mis à jour 2×/jour
         </p>
-        {articles.length > 0 && (() => {
-          const last = new Date(articles[0].date);
+        {latestDate && (() => {
+          const last = new Date(latestDate);
           const diff = Math.floor((Date.now() - last.getTime()) / 60000);
           const label = diff < 60
             ? `mise à jour il y a ${diff} min`

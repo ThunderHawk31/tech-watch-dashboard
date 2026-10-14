@@ -190,6 +190,25 @@ export async function fetchStats() {
   }
 }
 
+// Date du tout dernier article ingéré, tous secteurs/filtres confondus —
+// pour le badge "EN DIRECT". Une seule colonne, une seule ligne : ne pas
+// réutiliser articles[0].date d'une page paginée/filtrée, qui ne reflète
+// que ce qui est affiché à l'écran, pas l'état réel du pipeline.
+export async function fetchLatestArticleDate() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?select=published_at&order=published_at.desc&limit=1`,
+      { headers: supabaseHeaders() }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    return rows[0]?.published_at || null;
+  } catch (error) {
+    console.error('❌ Erreur dernière date:', error);
+    return null;
+  }
+}
+
 // Tous les articles correspondant aux filtres, sans pagination — réservé à
 // l'export CSV/JSON (StatsPage), appelé à la demande au clic plutôt qu'au
 // chargement de la page. Même plafond Supabase 1000 lignes que fetchStats().

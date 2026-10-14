@@ -62,13 +62,39 @@ export default async function handler(req, res) {
     return;
   }
 
-  const title = escapeHtml(article.title || 'Tech Watch');
+  const rawTitle = article.title || 'Tech Watch';
+  const title = escapeHtml(rawTitle);
   let desc = String(article.impact_marches || article.opportunites || '').replace(/\s+/g, ' ').trim();
   if (desc.length > 155) desc = desc.slice(0, 155).replace(/\s+\S*$/, '') + '…';
   desc = escapeHtml(desc);
   const canonical = `https://techwatch.fr/article/${encodeURIComponent(slug)}`;
 
   const imageUrl = `https://techwatch.fr/api/og-image?slug=${encodeURIComponent(slug)}`;
+
+  // Google recommande un headline <= 110 caractères pour NewsArticle.
+  const headline = rawTitle.length > 110 ? rawTitle.slice(0, 107).replace(/\s+\S*$/, '') + '…' : rawTitle;
+  const datePublished = article.published_at ? new Date(article.published_at).toISOString() : undefined;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline,
+    image: [imageUrl],
+    datePublished,
+    dateModified: datePublished,
+    author: { '@type': 'Organization', name: 'Tech Watch', url: 'https://techwatch.fr' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Tech Watch',
+      logo: { '@type': 'ImageObject', url: 'https://techwatch.fr/icon-512.png', width: 512, height: 512 }
+    },
+    description: String(article.impact_marches || article.opportunites || '').replace(/\s+/g, ' ').trim() || undefined,
+    articleSection: article.sector || undefined,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    url: canonical
+  };
+  // JSON.stringify ignore les clés `undefined`. '</' casse si un champ
+  // contenait jamais une balise de fermeture <script> dans son texte.
+  const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
   // Contenu texte réel pour les crawlers IA (GPTBot, ClaudeBot, PerplexityBot...)
   // qui n'exécutent pas JS : sans ça, ils ne voient que les meta tags ci-dessus
@@ -103,6 +129,7 @@ export default async function handler(req, res) {
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${desc}" />
   <meta name="twitter:image" content="${imageUrl}" />
+  <script type="application/ld+json">${jsonLdScript}</script>
 </head>
 <body>
   <article>
