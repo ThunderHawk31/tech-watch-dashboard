@@ -67,6 +67,11 @@
     "postbuild": "node scripts/prerender.js",
     "test": "craco test"
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -84,6 +89,10 @@
     "@craco/craco": "^7.1.0",
     "@eslint/js": "9.23.0",
     "@sparticuz/chromium": "^149.0.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "autoprefixer": "^10.4.20",
     "eslint": "9.23.0",
     "eslint-plugin-import": "2.31.0",
