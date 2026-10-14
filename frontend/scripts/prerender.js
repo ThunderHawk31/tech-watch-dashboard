@@ -25,6 +25,7 @@ const httpServer = require("http-server");
 const path = require("path");
 const fs = require("fs");
 
+const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://techwatch.fr").replace(/\/+$/, "");
 const BUILD_DIR = path.join(__dirname, "..", "build");
 
 // Sélecteur par défaut : <h1>/<main> existent dès le premier rendu React,
@@ -132,7 +133,8 @@ async function main() {
       await page.goto(url, { waitUntil: "networkidle0", timeout: 30000 });
       await waitForReady(page, route.ready || DEFAULT_READY_SELECTOR);
 
-      const html = await page.content();
+      // Filet de sécurité : aucune URL du serveur local ne doit fuiter en prod.
+      const html = (await page.content()).split(`http://localhost:${PORT}`).join(SITE_URL);
       const outPath = path.join(BUILD_DIR, route.out);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, html);

@@ -256,21 +256,49 @@ function buildImage({ title, sector, tickers }) {
   );
 }
 
+const SUPABASE_URL = 'https://bdhggllidtuwtcygsupk.supabase.co';
+const SLUG_RE = /^[a-z0-9-]{1,200}$/;
+
+// techwatch_articles.sector holds: IA, Cybersécurité, Tech, Crypto, Finance,
+// Énergie, Santé, Autre. Only crypto/ia have dedicated art; everything else
+// falls back to the generic design.
+function mapSectorToImage(sector) {
+  const s = (sector || '').toLowerCase();
+  if (s === 'crypto') return 'crypto';
+  if (s === 'ia') return 'ia';
+  return 'default';
+}
+
+// L'image n'accepte plus de titre libre : seul un slug existant en base est
+// rendu. Sinon n'importe qui pourrait générer des images "techwatch.fr" avec
+// le texte de son choix, et contourner le cache en variant les paramètres.
 export default async function handler(req) {
   const { searchParams } = new URL(req.url);
+  const slug = searchParams.get('slug') || '';
+  const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-  const title = (searchParams.get('title') || 'Tech Watch').slice(0, 180);
-
-  const sectorParam = (searchParams.get('sector') || 'default').toLowerCase();
-  const sector = SECTOR_EYEBROWS[sectorParam] ? sectorParam : 'default';
-
-  const tickers = (searchParams.get('tickers') || '')
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 4);
+  if (!SLUG_RE.test(slug) || !key) {
+    return new Response('Not found', { status: 404 });
+  }
 
   try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/techwatch_articles?slug=eq.${encodeURIComponent(slug)}&select=title,sector,tickers&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+    );
+    if (!r.ok) return new Response('Upstream error', { status: 502 });
+
+    const [article] = await r.json();
+    if (!article) return new Response('Not found', { status: 404 });
+
+    const title = (article.title || 'Tech Watch').slice(0, 180);
+    const sector = mapSectorToImage(article.sector);
+    const tickers = String(article.tickers || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 4);
+
     const fonts = await loadFonts();
 
     return new ImageResponse(buildImage({ title, sector, tickers }), {

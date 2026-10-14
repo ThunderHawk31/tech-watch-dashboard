@@ -176,7 +176,9 @@ create table techwatch_skipped (
   created_at timestamptz default now()
 );
 alter table techwatch_skipped enable row level security;
-create policy "Service write" on techwatch_skipped for insert with check (true);
+-- Pas de policy d'écriture : n8n utilise la clé service_role, qui contourne la RLS.
+-- (Une policy `for insert with check (true)` sans `to service_role` autoriserait
+-- n'importe qui, clé anon publique comprise, à insérer.)
 
 -- Entités VIP (personnes/entreprises à surveiller en priorité)
 create table vip_entities (
