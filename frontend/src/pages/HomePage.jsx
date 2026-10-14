@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
-import { fetchArticles as fetchArticlesAPI, fetchArticleById, invalidateCache } from "../api";
+import { fetchArticles as fetchArticlesAPI, fetchArticleById, fetchStats } from "../api";
 import { sectorConfig } from "../lib/config";
 import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
@@ -103,13 +103,18 @@ const HomePage = () => {
     });
   }, []); // eslint-disable-line
 
+  // Les stats globales (StatsOverview) sont indépendantes des filtres/page
+  // affichés : chargées une fois à part, pas à chaque fetchArticles.
+  useEffect(() => {
+    fetchStats().then(setStats).catch(() => setStats(null));
+  }, []);
+
   const fetchArticles = async (targetPage = page) => {
     setLoading(true);
     try {
       const data = await fetchArticlesAPI(filters, targetPage);
       setArticles(data.articles);
       setTotalCount(data.total);
-      setStats(data.stats);
       setIsInitialLoad(false);
       setLoading(false);
     } catch (error) {
@@ -138,12 +143,14 @@ const HomePage = () => {
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
-    invalidateCache();
     try {
-      const data = await fetchArticlesAPI(filters, page);
+      const [data, freshStats] = await Promise.all([
+        fetchArticlesAPI(filters, page),
+        fetchStats()
+      ]);
       setArticles(data.articles);
       setTotalCount(data.total);
-      setStats(data.stats);
+      setStats(freshStats);
       toast.success("Articles actualisés");
     } catch (error) {
       console.error('Erreur refresh:', error);

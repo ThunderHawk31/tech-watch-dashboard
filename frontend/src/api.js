@@ -4,9 +4,16 @@ const SUPABASE_BASE     = process.env.REACT_APP_SUPABASE_BASE_URL;
 const SUPABASE_URL      = `${SUPABASE_BASE}/rest/v1/techwatch_articles`;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-const CACHE_DURATION = 5 * 60 * 1000;
-// v2 : invalide les caches antérieurs à l'ajout de source/score_reason
-const CACHE_KEY      = 'tech_watch_cache_v2';
+const ARTICLE_COLUMNS = 'article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason';
+const PAGE_SIZE = 15;
+
+function supabaseHeaders(extra = {}) {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    ...extra
+  };
+}
 
 // Cache en mémoire pour les sources (valide toute la session)
 let _sourcesCache = null;
@@ -16,52 +23,13 @@ export async function fetchSources() {
   try {
     const res = await fetch(
       `${SUPABASE_BASE}/rest/v1/flux_sources?select=*&active=eq.true&order=type.asc,name.asc`,
-      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+      { headers: supabaseHeaders() }
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     _sourcesCache = await res.json();
     return _sourcesCache;
   } catch {
     return [];
-  }
-}
-
-export function invalidateCache() {
-  try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
-}
-
-// Récupère le cache depuis localStorage
-function getCache() {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-    
-    const { data, timestamp } = JSON.parse(cached);
-    const now = Date.now();
-    
-    if (now - timestamp < CACHE_DURATION) {
-      console.log('✅ Cache valide (âge: ' + Math.round((now - timestamp) / 1000) + 's)');
-      return data;
-    } else {
-      console.log('⏰ Cache expiré');
-      localStorage.removeItem(CACHE_KEY);
-      return null;
-    }
-  } catch (e) {
-    return null;
-  }
-}
-
-// Stocke en cache
-function setCache(data) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      data,
-      timestamp: Date.now()
-    }));
-    console.log('💾 Données mises en cache pour 5 minutes');
-  } catch (e) {
-    console.error('Erreur cache:', e);
   }
 }
 
@@ -77,7 +45,9 @@ function mapArticle(row) {
     analyse: row.analysis || '',
     importance: row.importance || 0,
     sentiment: row.sentiment || 'Neutre',
-    actions: row.tickers || '',
+    actions: typeof row.tickers === 'string'
+      ? row.tickers.split(',').map(a => a.trim()).filter(Boolean)
+      : (Array.isArray(row.tickers) ? row.tickers : []),
     secteur: row.sector || 'Autre',
     tokens: row.tokens || 0,
     source: row.source || '',
@@ -85,55 +55,59 @@ function mapArticle(row) {
   };
 }
 
-// Calculer les stats à partir des articles
-function computeStats(articles) {
-  const total = articles.length;
-  
-  // Comptage par secteur
-  const parSecteur = {};
-  articles.forEach(a => {
-    const s = a.secteur || 'Autre';
-    parSecteur[s] = (parSecteur[s] || 0) + 1;
-  });
-  
-  // Nombre de sentiments positifs
-  const sentimentPositif = articles.filter(a => a.sentiment === 'Positif').length;
-  
-  // Importance moyenne
-  const importanceMoyenne = total > 0
-    ? (articles.reduce((sum, a) => sum + (a.importance || 0), 0) / total).toFixed(2)
-    : '0';
-  
-  return { total, parSecteur, sentimentPositif, importanceMoyenne };
-}
+// Traduit les filtres validés en opérateurs PostgREST (ilike/in/eq/gte),
+// partagé entre fetchArticles (paginé) et fetchAllArticles (export complet).
+function buildFilterParams(filters) {
+  const params = new URLSearchParams();
 
-// Fetch tous les articles depuis Supabase
-async function fetchFromSupabase() {
-  console.log('🔄 Récupération des données depuis Supabase...');
-  
-  const response = await fetch(
-    `${SUPABASE_URL}?select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&order=published_at.desc`,
-    {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+  if (filters.sectors && filters.sectors.length > 0) {
+    params.set('sector', `in.(${filters.sectors.join(',')})`);
+  } else if (filters.sector && filters.sector !== 'Tous') {
+    params.set('sector', `eq.${filters.sector}`);
   }
 
-  const rows = await response.json();
-  const articles = rows.map(mapArticle);
-  const stats = computeStats(articles);
+  if (filters.sentiment && filters.sentiment !== 'Tous') {
+    params.set('sentiment', `eq.${filters.sentiment}`);
+  }
 
-  return { articles, stats };
+  const minImp = Number(filters.minImportance) || 0;
+  if (minImp > 0) {
+    params.set('importance', `gte.${minImp}`);
+  }
+
+  if (filters.ticker) {
+    params.set('tickers', `ilike.*${filters.ticker}*`);
+  }
+
+  if (filters.search) {
+    // Les parenthèses/virgules cassent la syntaxe or=(...) de PostgREST et
+    // '*' est le joker ilike — on les retire du terme plutôt que de les
+    // échapper, une recherche reste utile sans ces caractères.
+    const term = filters.search.replace(/[,()*]/g, ' ').trim();
+    if (term) {
+      params.set('or', `(title.ilike.*${term}*,analysis.ilike.*${term}*,sector.ilike.*${term}*)`);
+    }
+  }
+
+  const order = filters.sort === 'importance' ? 'importance.desc'
+    : filters.sort === 'az' ? 'title.asc'
+    : 'published_at.desc';
+  params.set('order', order);
+
+  return params;
 }
 
+function parseTotalFromContentRange(contentRange) {
+  // Supabase renvoie "0-14/810" (ou "*/0" si vide)
+  if (!contentRange) return null;
+  const total = contentRange.split('/')[1];
+  return total === '*' ? null : parseInt(total, 10);
+}
+
+// Pagination côté serveur : Supabase ne renvoie que la page demandée,
+// filtrée/triée/comptée par PostgREST — plus de téléchargement du dataset
+// entier dans le navigateur.
 export async function fetchArticles(filters = {}, page = 1) {
-  // Validation
   const validationResult = validateFilters({ ...filters, page });
 
   if (!validationResult.isValid) {
@@ -145,106 +119,107 @@ export async function fetchArticles(filters = {}, page = 1) {
   }
 
   const validFilters = validationResult.value;
-
   if (validFilters.search) {
     validFilters.search = sanitizeSearch(validFilters.search);
   }
 
+  const params = buildFilterParams(validFilters);
+  params.set('select', ARTICLE_COLUMNS);
+  params.set('limit', String(PAGE_SIZE));
+  params.set('offset', String((validFilters.page - 1) * PAGE_SIZE));
+
   try {
-    // Cache
-    const cachedData = getCache();
-    if (cachedData) {
-      return filterAndPaginate(cachedData, validFilters, validFilters.page);
-    }
+    const response = await fetch(`${SUPABASE_URL}?${params.toString()}`, {
+      headers: supabaseHeaders({ Prefer: 'count=exact' })
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    // Fetch depuis Supabase
-    const data = await fetchFromSupabase();
-    setCache(data);
+    const rows = await response.json();
+    const total = parseTotalFromContentRange(response.headers.get('content-range'));
 
-    return filterAndPaginate(data, validFilters, validFilters.page);
-
+    return { articles: rows.map(mapArticle), total: total ?? rows.length };
   } catch (error) {
     console.error('❌ Erreur API:', error);
     throw error;
   }
 }
 
-function filterAndPaginate(data, filters, page) {
-  let articles = data.articles || [];
-  
-  // Convertir actions en tableau
-  articles = articles.map(article => ({
-    ...article,
-    actions: typeof article.actions === 'string' 
-      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
-      : (Array.isArray(article.actions) ? article.actions : [])
-  }));
-  
-  // Filtrer
-  if (filters.search) {
-    const search = filters.search.toLowerCase();
-    articles = articles.filter(article =>
-      article.analyse?.toLowerCase().includes(search) ||
-      article.secteur?.toLowerCase().includes(search) ||
-      article.titre?.toLowerCase().includes(search)
+// Calculer les stats à partir des articles
+function computeStats(articles) {
+  const total = articles.length;
+
+  // Comptage par secteur
+  const parSecteur = {};
+  articles.forEach(a => {
+    const s = a.secteur || 'Autre';
+    parSecteur[s] = (parSecteur[s] || 0) + 1;
+  });
+
+  // Nombre de sentiments positifs
+  const sentimentPositif = articles.filter(a => a.sentiment === 'Positif').length;
+
+  // Importance moyenne
+  const importanceMoyenne = total > 0
+    ? (articles.reduce((sum, a) => sum + (a.importance || 0), 0) / total).toFixed(2)
+    : '0';
+
+  return { total, parSecteur, sentimentPositif, importanceMoyenne };
+}
+
+// Agrégats globaux (toujours sur l'ensemble des articles, indépendamment des
+// filtres/pagination affichés) : colonnes minimales pour rester léger même
+// avec beaucoup d'articles. Comme fetchAllArticles, plafonné au max_rows
+// Supabase (1000 lignes par défaut) — au-delà il faudra une vue/fonction
+// Postgres dédiée plutôt que de tout rapatrier côté client.
+export async function fetchStats() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?select=sector,sentiment,importance`,
+      { headers: supabaseHeaders() }
     );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    return computeStats(rows.map(r => ({
+      secteur: r.sector || 'Autre',
+      sentiment: r.sentiment || 'Neutre',
+      importance: r.importance || 0
+    })));
+  } catch (error) {
+    console.error('❌ Erreur stats:', error);
+    return null;
   }
-  
-  // Multi-select secteurs : [] = tous, sinon filtrer sur la liste
-  if (filters.sectors && filters.sectors.length > 0) {
-    articles = articles.filter(article => filters.sectors.includes(article.secteur));
-  } else if (filters.sector && filters.sector !== "Tous") {
-    // Rétrocompatibilité avec l'ancien filtre unique
-    articles = articles.filter(article => article.secteur === filters.sector);
-  }
-  
-  if (filters.sentiment && filters.sentiment !== "Tous") {
-    articles = articles.filter(article => article.sentiment === filters.sentiment);
-  }
-  
-  if (filters.minImportance && filters.minImportance !== "0") {
-    const minImp = parseInt(filters.minImportance);
-    articles = articles.filter(article => article.importance >= minImp);
+}
+
+// Tous les articles correspondant aux filtres, sans pagination — réservé à
+// l'export CSV/JSON (StatsPage), appelé à la demande au clic plutôt qu'au
+// chargement de la page. Même plafond Supabase 1000 lignes que fetchStats().
+export async function fetchAllArticles(filters = {}) {
+  const validationResult = validateFilters(filters);
+  if (!validationResult.isValid) {
+    throw new Error('Filtres invalides');
   }
 
-  if (filters.ticker) {
-    articles = articles.filter(article =>
-      (article.actions || []).some(t => t.toUpperCase() === filters.ticker.toUpperCase())
-    );
+  const validFilters = validationResult.value;
+  if (validFilters.search) {
+    validFilters.search = sanitizeSearch(validFilters.search);
   }
 
-  // Trier
-  if (filters.sort === "recent") {
-    articles.sort((a, b) => new Date(b.date) - new Date(a.date));
-  } else if (filters.sort === "importance") {
-    articles.sort((a, b) => b.importance - a.importance);
-  } else if (filters.sort === "az") {
-    articles.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
-  }
-  
-  // Pagination
-  const limit = 15;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedArticles = articles.slice(startIndex, endIndex);
-  
-  return {
-    articles: paginatedArticles,
-    total: articles.length,
-    stats: data.stats || {}
-  };
+  const params = buildFilterParams(validFilters);
+  params.set('select', ARTICLE_COLUMNS);
+
+  const response = await fetch(`${SUPABASE_URL}?${params.toString()}`, {
+    headers: supabaseHeaders()
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const rows = await response.json();
+  return rows.map(mapArticle);
 }
 
 export async function fetchSectorHeat() {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_SUPABASE_BASE_URL}/rest/v1/sector_heat?select=*`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      }
+      `${SUPABASE_BASE}/rest/v1/sector_heat?select=*`,
+      { headers: supabaseHeaders() }
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
@@ -254,7 +229,6 @@ export async function fetchSectorHeat() {
   }
 }
 
-
 export async function fetchArticleById(id) {
   if (!id || typeof id !== 'string') return null;
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -263,22 +237,13 @@ export async function fetchArticleById(id) {
 
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      }
+      `${SUPABASE_URL}?article_id=eq.${encodeURIComponent(id)}&select=${ARTICLE_COLUMNS}&limit=1`,
+      { headers: supabaseHeaders() }
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const rows = await response.json();
     if (!rows.length) return null;
-    const article = mapArticle(rows[0]);
-    article.actions = typeof article.actions === 'string'
-      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
-      : (Array.isArray(article.actions) ? article.actions : []);
-    return article;
+    return mapArticle(rows[0]);
   } catch (error) {
     console.error('fetchArticleById error:', error);
     return null;
@@ -289,41 +254,15 @@ export async function fetchArticleBySlug(slug) {
   if (!slug || typeof slug !== 'string') return null;
   try {
     const response = await fetch(
-      `${SUPABASE_URL}?slug=eq.${encodeURIComponent(slug)}&select=article_id,slug,title,title_en,published_at,url,analysis,importance,sentiment,tickers,sector,source,score_reason&limit=1`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      }
+      `${SUPABASE_URL}?slug=eq.${encodeURIComponent(slug)}&select=${ARTICLE_COLUMNS}&limit=1`,
+      { headers: supabaseHeaders() }
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const rows = await response.json();
     if (!rows.length) return null;
-    const article = mapArticle(rows[0]);
-    article.actions = typeof article.actions === 'string'
-      ? article.actions.split(',').map(a => a.trim()).filter(a => a)
-      : (Array.isArray(article.actions) ? article.actions : []);
-    return article;
+    return mapArticle(rows[0]);
   } catch (error) {
     console.error('fetchArticleBySlug error:', error);
-    return null;
-  }
-}
-
-export async function fetchStats() {
-  try {
-    const cachedData = getCache();
-    
-    if (cachedData) {
-      return cachedData.stats || {};
-    }
-    
-    const data = await fetchFromSupabase();
-    setCache(data);
-    return data.stats || {};
-  } catch (error) {
-    console.error('❌ Erreur stats:', error);
     return null;
   }
 }

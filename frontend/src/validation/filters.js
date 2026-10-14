@@ -67,6 +67,17 @@ export const filtersSchema = Joi.object({
       'any.only': 'Tri invalide. Valeurs acceptées : recent, importance'
     }),
 
+  // Ticker (filtre par action, ex: "AAPL") — whitelist de forme, pas de liste
+  // fermée possible puisque les tickers sont ouverts.
+  ticker: Joi.string()
+    .trim()
+    .pattern(/^[A-Za-z0-9.-]{0,15}$/)
+    .allow('', null)
+    .default('')
+    .messages({
+      'string.pattern.base': 'Ticker invalide'
+    }),
+
   // Pagination (limité à 1-1000)
   page: Joi.number()
     .integer()
