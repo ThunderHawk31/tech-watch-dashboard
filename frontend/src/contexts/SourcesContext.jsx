@@ -24,10 +24,14 @@ export function getSourceInfo(url, sources) {
     // Pour newsletter.techwatch.fr, extraire le nom depuis le path
     if (host === 'newsletter.techwatch.fr') {
       const segment = parsed.pathname.split('/').filter(Boolean)[0] || '';
-      const name = segment
-        .replace(/-newsletter$/i, '')
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, c => c.toUpperCase()) || source.name;
+      // Le path utilise des underscores (ex: ft_newswrap) ou des tirets
+      const key = segment.toLowerCase().replace(/-newsletter$/i, '');
+      const DISPLAY_NAMES = { ft_newswrap: 'FT Newswrap' };
+      const name = DISPLAY_NAMES[key]
+        || key
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase())
+        || source.name;
       return { ...source, name };
     }
 
