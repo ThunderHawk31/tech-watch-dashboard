@@ -9,9 +9,12 @@ import { formatDate, renderStars, parseAnalysis } from "../lib/appUtils";
 import { sanitizeURL } from "../utils/sanitizer";
 import { useLang } from "../contexts/LangContext";
 import { useSources, getSourceInfo } from "../contexts/SourcesContext";
+import { useAdmin } from "../contexts/AdminContext";
+import NotePersoBadge from "./NotePersoBadge";
 
-const ArticleModal = ({ article, open, onClose }) => {
+const ArticleModal = ({ article, open, onClose, onNoteChange }) => {
   const { lang } = useLang();
+  const { isAdmin } = useAdmin();
   const sources = useSources();
 
   if (!article) return null;
@@ -45,6 +48,16 @@ const ArticleModal = ({ article, open, onClose }) => {
               {renderStars(article.importance)}
             </div>
           </div>
+          {isAdmin && (
+            <div className="mb-1">
+              <NotePersoBadge
+                articleId={article.id}
+                notePerso={article.notePerso}
+                noteCorrigee={article.noteCorrigee}
+                onChange={onNoteChange}
+              />
+            </div>
+          )}
           <DialogTitle className="text-xl leading-tight pr-8">{modalTitle}</DialogTitle>
           <DialogDescription>{formatDate(article.date)}</DialogDescription>
         </DialogHeader>

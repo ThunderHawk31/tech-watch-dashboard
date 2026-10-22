@@ -11,10 +11,13 @@ import { useLang } from "../contexts/LangContext";
 import { useFavorites as useFavoritesContext } from "../contexts/FavoritesContext";
 import { ShareButton } from "./ShareButton";
 import { useSources, getSourceInfo } from "../contexts/SourcesContext";
+import { useAdmin } from "../contexts/AdminContext";
+import NotePersoBadge from "./NotePersoBadge";
 
-const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker }) => {
+const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker, onNoteChange }) => {
   const { isFavorite, toggleFavorite } = useFavoritesContext();
   const { lang, setLang } = useLang();
+  const { isAdmin } = useAdmin();
   const sources = useSources();
   const sector = sectorConfig[article.secteur] || sectorConfig["Autre"];
   const sentiment = sentimentConfig[article.sentiment] || sentimentConfig["Neutre"];
@@ -126,6 +129,16 @@ const ArticleCard = memo(({ article, onOpenModal, onTickerClick, activeTicker })
             </div>
           </div>
         </div>
+        {isAdmin && (
+          <div className="mb-2">
+            <NotePersoBadge
+              articleId={article.id}
+              notePerso={article.notePerso}
+              noteCorrigee={article.noteCorrigee}
+              onChange={onNoteChange}
+            />
+          </div>
+        )}
         <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors flex items-start justify-between gap-2">
           <span>{sanitizeText(getTitle())}</span>
           {article.titre_en && (

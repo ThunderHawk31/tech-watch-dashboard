@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Info, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
 import { fetchArticles as fetchArticlesAPI, fetchArticleById, fetchStats, fetchLatestArticleDate } from "../api";
 import { sectorConfig } from "../lib/config";
+import { useAdmin } from "../contexts/AdminContext";
+import { supabase } from "../lib/supabaseClient";
 import { Button } from "../components/ui/button";
 import ArticleCard from "../components/ArticleCard";
 import ArticleModal from "../components/ArticleModal";
@@ -23,7 +25,29 @@ function excerptFromAnalyse(analyse = '', maxLen = 150) {
   return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
 }
 
+// Fusionne les notes perso admin dans une liste d'articles déjà chargée.
+// Best-effort : si l'appel échoue (pas admin, pas connecté), les articles
+// restent affichés sans note perso, pas d'erreur bloquante.
+async function attachNotes(articleList) {
+  const ids = articleList.map(a => a.id).filter(Boolean);
+  if (ids.length === 0) return articleList;
+  try {
+    const { data, error } = await supabase.rpc('get_my_notes', { p_article_ids: ids });
+    if (error || !data) return articleList;
+    const notesById = new Map(data.map(row => [row.article_id, row]));
+    return articleList.map(a => {
+      const note = notesById.get(a.id);
+      return note
+        ? { ...a, notePerso: note.note_perso, notePersoAt: note.note_perso_at, noteCorrigee: note.note_corrigee }
+        : a;
+    });
+  } catch {
+    return articleList;
+  }
+}
+
 const HomePage = () => {
+  const { isAdmin } = useAdmin();
   const [articles, setArticles] = useState([]);
   const [stats, setStats] = useState(null);
   const [latestDate, setLatestDate] = useState(null);
@@ -54,6 +78,15 @@ const HomePage = () => {
   const handleTickerClick = (ticker) => {
     setFilters(f => ({ ...f, ticker: f.ticker === ticker ? "" : ticker }));
     setPage(1);
+  };
+
+  // row = { article_id, note_perso, note_perso_at, note_corrigee } renvoyé par set_note_perso.
+  const handleNoteChange = (articleId, row) => {
+    const patch = a => a.id === articleId
+      ? { ...a, notePerso: row.note_perso, notePersoAt: row.note_perso_at, noteCorrigee: row.note_corrigee }
+      : a;
+    setArticles(prev => prev.map(patch));
+    setSelectedArticle(prev => (prev && prev.id === articleId) ? patch(prev) : prev);
   };
 
   // SEO dynamique : si un article est ouvert via /?article=UUID, injecter ses OG tags
@@ -121,6 +154,9 @@ const HomePage = () => {
       setTotalCount(data.total);
       setIsInitialLoad(false);
       setLoading(false);
+      if (isAdmin) {
+        attachNotes(data.articles).then(setArticles);
+      }
     } catch (error) {
       console.error('Erreur chargement:', error);
       toast.error("Erreur lors du chargement des articles");
@@ -158,6 +194,9 @@ const HomePage = () => {
       setStats(freshStats);
       setLatestDate(freshLatestDate);
       toast.success("Articles actualisés");
+      if (isAdmin) {
+        attachNotes(data.articles).then(setArticles);
+      }
     } catch (error) {
       console.error('Erreur refresh:', error);
       toast.error("Erreur lors de l'actualisation");
@@ -268,6 +307,7 @@ const HomePage = () => {
                   onOpenModal={handleOpenModal}
                   onTickerClick={handleTickerClick}
                   activeTicker={filters.ticker}
+                  onNoteChange={handleNoteChange}
                 />
               </div>
             ))}
@@ -287,7 +327,7 @@ const HomePage = () => {
         </>
       )}
 
-      <ArticleModal article={selectedArticle} open={!!selectedArticle} onClose={handleCloseModal} />
+      <ArticleModal article={selectedArticle} open={!!selectedArticle} onClose={handleCloseModal} onNoteChange={handleNoteChange} />
     </div>
   );
 };
