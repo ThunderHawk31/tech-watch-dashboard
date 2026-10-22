@@ -10,6 +10,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LangProvider } from './contexts/LangContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { SourcesProvider } from './contexts/SourcesContext';
+import { AdminProvider } from './contexts/AdminContext';
 import { HeaderNew as Header } from './components/HeaderNew';
 import MentionsLegales from './MentionsLegales';
 import Footer from './components/Footer';
@@ -27,6 +28,9 @@ const StatsPage            = lazy(() => import('./StatsPage'));
 const MonitoringPage       = lazy(() => import('./pages/MonitoringPage'));
 const TickerWatchlistPage  = lazy(() => import('./pages/TickerWatchlistPage'));
 const DigestPage           = lazy(() => import('./pages/DigestPage'));
+const AdminLoginPage       = lazy(() => import('./pages/AdminLoginPage'));
+const AdminReviewPage      = lazy(() => import('./pages/AdminReviewPage'));
+const AdminResetPasswordPage = lazy(() => import('./pages/AdminResetPasswordPage'));
 
 function App() {
 
@@ -112,6 +116,9 @@ function App() {
             }
           />
           <Route path="/article/:slug" element={<ArticleRedirect />} />
+          <Route path="/admin-login" element={<Suspense fallback={null}><AdminLoginPage /></Suspense>} />
+          <Route path="/admin-review" element={<Suspense fallback={null}><AdminReviewPage /></Suspense>} />
+          <Route path="/admin-reset-password" element={<Suspense fallback={null}><AdminResetPasswordPage /></Suspense>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
@@ -129,6 +136,7 @@ function AppWrapper() {
           <LangProvider>
             <FavoritesProvider>
               <SourcesProvider>
+              <AdminProvider>
               <IOSInstallPrompt />
               <InstallPWA />
               <ErrorBoundary>
@@ -136,6 +144,7 @@ function AppWrapper() {
               </ErrorBoundary>
               <Toaster position="top-right" richColors />
               <ChatWidget />
+              </AdminProvider>
               </SourcesProvider>
             </FavoritesProvider>
           </LangProvider>

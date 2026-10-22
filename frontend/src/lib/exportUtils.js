@@ -1,5 +1,54 @@
 import { toast } from 'sonner';
 
+// Échappement CSV partagé (protection formula injection Excel/LibreOffice).
+export function escapeCSV(str) {
+  if (str === null || str === undefined) return '';
+  let stringified = String(str);
+  if (/^[=+\-@\t\r]/.test(stringified)) {
+    stringified = "'" + stringified;
+  }
+  if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
+    return `"${stringified.replace(/"/g, '""')}"`;
+  }
+  return stringified;
+}
+
+// Export du dataset note_perso vs importance (vérité terrain pour calibrer
+// le prompt de scoring) — distinct de exportToCSV qui exporte le contenu
+// analysé pour la lecture humaine.
+export function exportNotesToCSV(rows, filename = 'techwatch-notes') {
+  if (!rows || rows.length === 0) {
+    toast.error('❌ Aucune note à exporter');
+    return;
+  }
+
+  const headers = ['id', 'slug', 'titre', 'date', 'importance', 'note_perso', 'note_perso_at', 'note_corrigee'];
+  const csvRows = rows.map(r => [
+    r.article_id, r.slug || '', r.title || '', r.published_at || '',
+    r.importance ?? '', r.note_perso ?? '', r.note_perso_at || '', r.note_corrigee ?? false
+  ]);
+
+  const csvContent = [
+    headers.map(escapeCSV).join(','),
+    ...csvRows.map(row => row.map(escapeCSV).join(','))
+  ].join('\n');
+
+  const BOM = '﻿';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().split('T')[0];
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}_${timestamp}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  toast.success('📊 Export notes réussi !', { description: `${rows.length} lignes exportées` });
+}
+
 export function exportToCSV(articles, filename = 'veille-tech') {
   if (!articles || articles.length === 0) {
     toast.error('❌ Aucun article à exporter', {
