@@ -4,11 +4,9 @@ import { toast } from 'sonner';
 import { Download, LogOut } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { supabase } from '../lib/supabaseClient';
-import { parseAnalysis, formatDate, renderStars } from '../lib/appUtils';
+import { parseAnalysis, formatDate } from '../lib/appUtils';
 import { exportNotesToCSV } from '../lib/exportUtils';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { sectorConfig } from '../lib/config';
 
 // Route volontairement non liée dans la nav. Flux de notation rapide :
 // un article non noté à la fois, raccourcis clavier 1-5, passage automatique
@@ -111,7 +109,7 @@ const AdminReviewPage = () => {
   }
 
   const { resume, pointsCles } = current ? parseAnalysis(current.analysis) : {};
-  const sector = current ? (sectorConfig[current.sector] || sectorConfig['Autre']) : null;
+  const hasPoints = Array.isArray(pointsCles) && pointsCles.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -137,27 +135,31 @@ const AdminReviewPage = () => {
 
       {current && (
         <div className="border border-border rounded-xl p-6 flex flex-col gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={`${sector.bg} ${sector.text} border-0`}>{current.sector}</Badge>
-            <span className="text-sm text-muted-foreground">{formatDate(current.published_at)}</span>
-            <div className="flex items-center gap-0.5 ml-auto">
-              {renderStars(current.importance)}
-            </div>
+          <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+            {current.source && <span>{current.source}</span>}
+            {current.source && <span aria-hidden="true">·</span>}
+            <span>{formatDate(current.published_at)}</span>
           </div>
           <h2 className="text-lg font-medium leading-tight">{current.title}</h2>
-          {resume && <p className="text-sm text-foreground leading-relaxed">{resume}</p>}
-          {pointsCles && (
-            <ul className="flex flex-col gap-1 text-sm">
-              {pointsCles.map((pt, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                  {pt}
-                </li>
-              ))}
-            </ul>
-          )}
-          {current.score_reason && (
-            <p className="text-xs text-muted-foreground">Pourquoi ce score : {current.score_reason}</p>
+          {(hasPoints || resume) && (
+            // key = article_id : le menu se referme à chaque nouvel article
+            <details key={current.article_id} className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground select-none">
+                Plus de contexte
+              </summary>
+              {hasPoints ? (
+                <ul className="flex flex-col gap-1 mt-2">
+                  {pointsCles.map((pt, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 leading-relaxed">{resume}</p>
+              )}
+            </details>
           )}
 
           <div className="flex gap-2 justify-center pt-2">
