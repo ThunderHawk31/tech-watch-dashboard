@@ -139,16 +139,6 @@ const AdminReviewPage = () => {
             {current.source && <span>{current.source}</span>}
             {current.source && <span aria-hidden="true">·</span>}
             <span>{formatDate(current.published_at)}</span>
-            {current.url && (
-              <a
-                href={current.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-auto underline"
-              >
-                Article original
-              </a>
-            )}
           </div>
           <h2 className="text-lg font-medium leading-tight">{current.title}</h2>
           {(hasPoints || resume) && (

@@ -7,7 +7,7 @@
 -- DROP obligatoire : CREATE OR REPLACE ne peut pas changer les colonnes de
 -- retour d'une fonction RETURNS TABLE. Les grants sont donc recréés ici.
 -- `analysis` reste renvoyé : il alimente le menu "Plus de contexte" (points
--- clés / résumé), fermé par défaut.
+-- clés / résumé), fermé par défaut. Pas de `url` : pas de lien vers l'original.
 -- ============================================================================
 
 begin;
@@ -17,7 +17,7 @@ drop function if exists public.list_unrated_articles(integer);
 create function public.list_unrated_articles(p_limit integer default 20)
 returns table (
   article_id uuid, title text, published_at timestamptz,
-  source text, url text, analysis text
+  source text, analysis text
 )
 language plpgsql
 security definer
@@ -33,7 +33,7 @@ begin
   end if;
 
   return query
-  select t.article_id, t.title, t.published_at, t.source, t.url, t.analysis
+  select t.article_id, t.title, t.published_at, t.source, t.analysis
   from public.techwatch_articles t
   where t.note_perso is null
   order by t.published_at desc
