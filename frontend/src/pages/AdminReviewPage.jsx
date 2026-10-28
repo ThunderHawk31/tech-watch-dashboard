@@ -7,12 +7,14 @@ import { supabase } from '../lib/supabaseClient';
 import { parseAnalysis, formatDate } from '../lib/appUtils';
 import { exportNotesToCSV } from '../lib/exportUtils';
 import { Button } from '../components/ui/button';
+import AdminPortfolioPanel from '../components/AdminPortfolioPanel';
 
-// Route volontairement non liée dans la nav. Flux de notation rapide :
-// un article non noté à la fois, raccourcis clavier 1-5, passage automatique
-// au suivant après chaque note.
+// Route volontairement non liée dans la nav. Deux onglets : Notation (flux
+// rapide, un article non noté à la fois, raccourcis clavier 1-5) et Portfolio
+// (liste cherchable pour cocher "intéressant" / "publier" + phrase perso).
 const AdminReviewPage = () => {
   const { isAdmin, loading, signOut } = useAdmin();
+  const [tab, setTab] = useState('notation');
   const [queue, setQueue] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -64,6 +66,7 @@ const AdminReviewPage = () => {
 
   useEffect(() => {
     const handler = (e) => {
+      if (tab !== 'notation') return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (['1', '2', '3', '4', '5'].includes(e.key)) {
         rate(Number(e.key));
@@ -71,7 +74,7 @@ const AdminReviewPage = () => {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [rate]);
+  }, [rate, tab]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -113,13 +116,37 @@ const AdminReviewPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Notation — {queue.length} en attente</h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold">
+            {tab === 'notation' ? `Notation — ${queue.length} en attente` : 'Portfolio'}
+          </h1>
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setTab('notation')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                tab === 'notation' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Notation
+            </button>
+            <button
+              onClick={() => setTab('portfolio')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                tab === 'portfolio' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Portfolio
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport} disabled={exporting}>
-            <Download className="w-4 h-4" />
-            Export CSV
-          </Button>
+          {tab === 'notation' && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport} disabled={exporting}>
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="gap-2" onClick={signOut}>
             <LogOut className="w-4 h-4" />
             Déconnexion
@@ -127,55 +154,61 @@ const AdminReviewPage = () => {
         </div>
       </div>
 
-      {fetching && !current && <p className="text-muted-foreground">Chargement…</p>}
+      {tab === 'notation' && (
+        <>
+          {fetching && !current && <p className="text-muted-foreground">Chargement…</p>}
 
-      {!fetching && !current && (
-        <p className="text-muted-foreground">Tous les articles sont notés. 🎉</p>
-      )}
-
-      {current && (
-        <div className="border border-border rounded-xl p-6 flex flex-col gap-4">
-          <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
-            {current.source && <span>{current.source}</span>}
-            {current.source && <span aria-hidden="true">·</span>}
-            <span>{formatDate(current.published_at)}</span>
-          </div>
-          <h2 className="text-lg font-medium leading-tight">{current.title}</h2>
-          {(hasPoints || resume) && (
-            // key = article_id : le menu se referme à chaque nouvel article
-            <details key={current.article_id} className="text-sm">
-              <summary className="cursor-pointer text-muted-foreground select-none">
-                Plus de contexte
-              </summary>
-              {hasPoints ? (
-                <ul className="flex flex-col gap-1 mt-2">
-                  {pointsCles.map((pt, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 leading-relaxed">{resume}</p>
-              )}
-            </details>
+          {!fetching && !current && (
+            <p className="text-muted-foreground">Tous les articles sont notés. 🎉</p>
           )}
 
-          <div className="flex gap-2 justify-center pt-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => rate(n)}
-                className="w-12 h-12 rounded-lg border border-input text-base font-semibold hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-center text-muted-foreground">Raccourci clavier : touches 1 à 5</p>
-        </div>
+          {current && (
+            <div className="border border-border rounded-xl p-6 flex flex-col gap-4">
+              <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+                {current.source && <span>{current.source}</span>}
+                {current.source && <span aria-hidden="true">·</span>}
+                <span>{formatDate(current.published_at)}</span>
+              </div>
+              <h2 className="text-lg font-medium leading-tight">{current.title}</h2>
+              {(hasPoints || resume) && (
+                // key = article_id : le menu se referme à chaque nouvel article
+                <details key={current.article_id} className="text-sm">
+                  <summary className="cursor-pointer text-muted-foreground select-none">
+                    Plus de contexte
+                  </summary>
+                  {hasPoints ? (
+                    <ul className="flex flex-col gap-1 mt-2">
+                      {pointsCles.map((pt, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 leading-relaxed">{resume}</p>
+                  )}
+                </details>
+              )}
+
+              <div className="flex gap-2 justify-center pt-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => rate(n)}
+                    className="w-12 h-12 rounded-lg border border-input text-base font-semibold hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-center text-muted-foreground">Raccourci clavier : touches 1 à 5</p>
+            </div>
+          )}
+        </>
       )}
+
+      {tab === 'portfolio' && <AdminPortfolioPanel />}
     </div>
   );
 };
