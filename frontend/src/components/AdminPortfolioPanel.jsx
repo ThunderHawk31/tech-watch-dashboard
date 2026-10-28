@@ -4,8 +4,13 @@ import { Search } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { formatDate } from '../lib/appUtils';
 import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 
 const PAGE_SIZE = 30;
+
+// Portfolio BTS : uniquement IA/Tech/Cybersécurité, jamais Finance/Crypto.
+const PORTFOLIO_SECTORS = ['IA', 'Tech', 'Cybersécurité'];
 
 // Onglet "Portfolio" de /admin-review : contrairement à la notation (file qui
 // se vide), c'est une liste cherchable et persistante — on doit pouvoir
@@ -22,6 +27,7 @@ const AdminPortfolioPanel = () => {
       let query = supabase
         .from('techwatch_articles')
         .select('article_id,title,sector,published_at,interessant,portfolio_publie,portfolio_note')
+        .in('sector', PORTFOLIO_SECTORS)
         .order('published_at', { ascending: false })
         .limit(PAGE_SIZE);
       if (term) query = query.ilike('title', `%${term}%`);
@@ -81,23 +87,27 @@ const AdminPortfolioPanel = () => {
               <p className="text-xs text-muted-foreground mt-1">{a.sector} · {formatDate(a.published_at)}</p>
             </div>
 
-            <div className="flex items-center gap-4 flex-wrap text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+            <div className="flex items-center gap-6 flex-wrap text-sm">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`interessant-${a.article_id}`}
                   checked={!!a.interessant}
-                  onChange={(e) => updateFlag(a.article_id, { interessant: e.target.checked })}
+                  onCheckedChange={(checked) => updateFlag(a.article_id, { interessant: checked === true })}
                 />
-                Intéressant
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+                <Label htmlFor={`interessant-${a.article_id}`} className="cursor-pointer font-normal">
+                  Intéressant
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`publie-${a.article_id}`}
                   checked={!!a.portfolio_publie}
-                  onChange={(e) => updateFlag(a.article_id, { portfolio_publie: e.target.checked })}
+                  onCheckedChange={(checked) => updateFlag(a.article_id, { portfolio_publie: checked === true })}
                 />
-                Publier sur le portfolio
-              </label>
+                <Label htmlFor={`publie-${a.article_id}`} className="cursor-pointer font-normal">
+                  Publier sur le portfolio
+                </Label>
+              </div>
             </div>
 
             {a.portfolio_publie && (
