@@ -51,7 +51,8 @@ function mapArticle(row) {
     secteur: row.sector || 'Autre',
     tokens: row.tokens || 0,
     source: row.source || '',
-    scoreReason: row.score_reason || ''
+    scoreReason: row.score_reason || '',
+    portfolioNote: row.portfolio_note || ''
   };
 }
 
@@ -232,6 +233,23 @@ export async function fetchAllArticles(filters = {}) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const rows = await response.json();
   return rows.map(mapArticle);
+}
+
+// Articles cochés par l'admin pour le portfolio BTS — lecture publique
+// (clé anon), filtrée côté Supabase sur portfolio_publie=true.
+export async function fetchPortfolioArticles() {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}?portfolio_publie=eq.true&select=${ARTICLE_COLUMNS},portfolio_note&order=published_at.desc`,
+      { headers: supabaseHeaders() }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    return rows.map(mapArticle);
+  } catch (error) {
+    console.error('❌ Erreur portfolio:', error);
+    return [];
+  }
 }
 
 export async function fetchSectorHeat() {
