@@ -11,6 +11,20 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
+// `analysis` est un blob JSON stocké en text (titre/resume/impact_marches/...,
+// cf. api/og.js) : on n'en garde que le résumé pour la description RSS.
+function extractResume(analysisRaw) {
+  if (!analysisRaw) return '';
+  const trimmed = analysisRaw.trimStart();
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.resume) return String(parsed.resume).trim();
+    } catch { /* pas du JSON valide, on retombe sur le texte brut */ }
+  }
+  return analysisRaw.trim();
+}
+
 export default async function handler(req, res) {
   if (!SUPABASE_KEY) {
     res.status(500).send('Server configuration error');
@@ -33,7 +47,7 @@ export default async function handler(req, res) {
     const title = escapeXml(a.title || 'Sans titre');
     const link = escapeXml(a.url || '');
     const pubDate = a.published_at ? new Date(a.published_at).toUTCString() : '';
-    const description = escapeXml(a.analysis || '');
+    const description = escapeXml(extractResume(a.analysis));
     const category = escapeXml(a.sector || '');
     return `
     <item>
