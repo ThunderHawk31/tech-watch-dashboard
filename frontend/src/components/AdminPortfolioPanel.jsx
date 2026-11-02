@@ -58,7 +58,11 @@ const AdminPortfolioPanel = () => {
         p_publie: patch.portfolio_publie ?? null,
         p_note: patch.portfolio_note ?? null,
       });
-      if (error) toast.error('Non enregistré', { description: error.message });
+      if (error) {
+        toast.error('Non enregistré', { description: error.message });
+      } else {
+        toast.success('Enregistré', { duration: 1500 });
+      }
     } finally {
       savingRef.current[articleId] = false;
     }
