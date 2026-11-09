@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { Search } from 'lucide-react';
+import { Search, ChevronDown, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { formatDate } from '../lib/appUtils';
+import { formatDate, parseAnalysis } from '../lib/appUtils';
 import { Input } from './ui/input';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
@@ -26,7 +26,7 @@ const AdminPortfolioPanel = () => {
     try {
       let query = supabase
         .from('techwatch_articles')
-        .select('article_id,title,sector,published_at,interessant,portfolio_publie,portfolio_note')
+        .select('article_id,title,sector,published_at,interessant,portfolio_publie,portfolio_note,analysis,url,source')
         .in('sector', PORTFOLIO_SECTORS)
         .order('published_at', { ascending: false })
         .limit(PAGE_SIZE);
@@ -84,12 +84,49 @@ const AdminPortfolioPanel = () => {
       {!loading && articles.length === 0 && <p className="text-muted-foreground">Aucun article.</p>}
 
       <div className="flex flex-col gap-3">
-        {articles.map((a) => (
+        {articles.map((a) => {
+          const { resume, pointsCles } = parseAnalysis(a.analysis);
+          const hasPoints = Array.isArray(pointsCles) && pointsCles.length > 0;
+          const hasDetails = !!resume || hasPoints || !!a.url;
+
+          return (
           <div key={a.article_id} className="border border-border rounded-xl p-4 flex flex-col gap-3">
             <div>
               <p className="font-medium text-sm leading-tight">{a.title}</p>
               <p className="text-xs text-muted-foreground mt-1">{a.sector} · {formatDate(a.published_at)}</p>
             </div>
+
+            {hasDetails && (
+              <details className="group text-sm">
+                <summary className="cursor-pointer select-none list-none flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                  <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                  Voir le résumé
+                </summary>
+                <div className="mt-2 flex flex-col gap-2 pl-5">
+                  {resume && <p className="leading-relaxed">{resume}</p>}
+                  {hasPoints && (
+                    <ul className="flex flex-col gap-1">
+                      {pointsCles.map((pt, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {a.url && (
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline text-xs w-fit"
+                    >
+                      Lire l'article source <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </details>
+            )}
 
             <div className="flex items-center gap-6 flex-wrap text-sm">
               <div className="flex items-center gap-2">
@@ -126,7 +163,8 @@ const AdminPortfolioPanel = () => {
               />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
