@@ -33,11 +33,19 @@ export function AdminProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!active) return;
-      setSession(s);
-      refreshAdminStatus(s).finally(() => active && setLoading(false));
-    });
+    // getSession() peut rejeter (session locale corrompue, réseau bloqué...).
+    // Sans ce catch, `loading` ne retombe jamais et la page reste blanche
+    // indéfiniment, y compris après un rechargement.
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        if (!active) return;
+        setSession(s);
+        return refreshAdminStatus(s);
+      })
+      .catch(() => {
+        if (active) setSession(null);
+      })
+      .finally(() => active && setLoading(false));
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
